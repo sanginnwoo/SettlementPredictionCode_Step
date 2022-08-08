@@ -46,17 +46,16 @@ step_end_index = [9, 37, 80]
 #
 # 각 단계별 예측을 반복문으로 처리
 #
-
+'''
 # 반복문 예시
 for i in range(0,3):
-
     tm = time[step_start_index[i]:step_end_index[i]]
     # 내용을 채우시오.
 
     if i > 0:
         # 두번째 단계부터는 침하량 보정
         # 내용을 채우시오.
-
+'''
 
 
 #1단계에 해당하는 실측 데이터 범위 지정
@@ -131,11 +130,11 @@ step2_prediction_correction = fun_step_prediction_correction(ym_2, step2_predict
 '''
 
 # 3단계 실측 침하량 (3단계~최종)
-tm_3 = time[37:end]
-ym_3 = settle[37:end]
+tm_3 = time[37:80]
+ym_3 = settle[37:80]
 
 # 2단계 예측 침하량 (3단계 구간만)
-yp_3 = step2_prediction_correction[27:end]
+yp_3 = step2_prediction_correction[27:80]
 
 # 3단계 보정 침하량 산정
 step3_measured_correction = fun_step_measured_correction(ym_3, yp_3)
