@@ -1,14 +1,17 @@
-# first change
+# 주요 수정 사항
+# 주석 철저히: 한글로 작성해도 괜찮아요
+# 입력 1: 시간-침하 데이터, 시간-성토고 데이터 --> 파일로 부터 읽는 것
+# 입력 2: 사용자가 단계 지정 ---> 간 단계별 처음과 끝 INDEX
 
+
+# 라이브러리 import
 import numpy as np
 from scipy.optimize import least_squares
-
-# python library for visualization
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
-
-# python library for data management
 import pandas as pd
+
+# Functions
 
 # generate a time-settlement curve for hyperbolic method
 def generate_data_hyper(px, pt):
@@ -18,6 +21,9 @@ def generate_data_hyper(px, pt):
 def fun_hyper_linear(px, pt, py):
     return pt / (px[0] * pt + px[1]) - py
 
+
+# 파일 읽기, 리스트 설정
+
 # Read .csv file using pandas
 data = pd.read_csv("1_SP-11.csv")
 
@@ -26,44 +32,36 @@ time = data['Time'].to_numpy()
 settle = data['Settle'].to_numpy()
 surcharge = data['Surcharge'].to_numpy()
 
-# Set data range (in%) to use in the prediction
-start = 0
-end = 100
-
-# Find the data range (in data) to use in the prediction
-end_date = time[-1]
-pred_start_date = int(end_date * start / 100) # prediction start date
-pred_end_date = int(end_date * end / 100) # prediction end data
-
-# initialize the indices for start and end date
-start_index = -1
-end_index = -1
-
-# Find the index of the initial data
-count = 0
-for day in time: # time = [0, 1, 2, 3, ...]
-    count = count + 1
-    if day > pred_start_date:
-        start_index = count - 1
-        break
-
-# Find the index of the final data
-count = 0
-for day in time: # time = [... 100, 101, 104, ...]
-    count = count + 1
-    if day > pred_end_date:
-        end_index = count - 1
-        break
-
-# Set data for the prediction
+#
+# 성토 단계 시작, 끝 인덱스 입력 / 전체 성토 단계 입력
+# 예: 1단계: (0, 9), 2단계: (10, 37), 3단계: (38, 80)
+# 예: 전체 성토 단계: 3
 
 '''
 1단계 성토고 침하 예측
 '''
+step_start_index = [0, 10, 38]
+step_end_index = [9, 37, 80]
+
+#
+# 각 단계별 예측을 반복문으로 처리
+#
+
+# 반복문 예시
+for i in range(0,3):
+
+    tm = time[step_start_index[i]:step_end_index[i]]
+    # 내용을 채우시오.
+
+    if i > 0:
+        # 두번째 단계부터는 침하량 보정
+        # 내용을 채우시오.
+
+
 
 #1단계에 해당하는 실측 데이터 범위 지정
-tm_1 = time[start:10]
-ym_1 = settle[start:10]
+tm_1 = time[0:10]
+ym_1 = settle[0:10]
 
 # Set a list for the coefficient; here a and b
 x0 = np.ones(2)
@@ -135,9 +133,9 @@ step2_prediction_correction = fun_step_prediction_correction(ym_2, step2_predict
 # 3단계 실측 침하량 (3단계~최종)
 tm_3 = time[37:end]
 ym_3 = settle[37:end]
+
 # 2단계 예측 침하량 (3단계 구간만)
 yp_3 = step2_prediction_correction[27:end]
-
 
 # 3단계 보정 침하량 산정
 step3_measured_correction = fun_step_measured_correction(ym_3, yp_3)
@@ -163,7 +161,7 @@ step3_prediction_curve = settlement_prediction_curve(settle_hyper_linear_3, yp_3
 step3_prediction_correction = fun_step_prediction_correction(ym_3, step3_prediction_curve)
 
 '''
-그래프 작성
+나중에: 그래프 작성
 '''
 
 # Set parameters for plotting
