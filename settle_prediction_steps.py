@@ -58,8 +58,9 @@ surcharge = data['Surcharge'].to_numpy()
 # =================
 
 # 현재 아래 값은 입력값으로 각 데이터로부터 추출해야 함
+# todo: 단계성토 데이터 14곳에 대해서 아래 정보를 구축해서 정리할 것
 step_start_index = [0, 10, 37]  # 성토 단계 시작 index
-step_end_index = [9, 36, 70]    # 성토 단계 끝 index --> max. index = 78
+step_end_index = [10, 37, 65]   # 성토 단계 끝 index + 1 --> max. index = 78 따라서 78 + 1 = 79
 final_index = time.size         # 마지만 계측 데이터 index + 1
 num_steps = 3                   # 성토 단계 횟수
 
@@ -209,6 +210,8 @@ axes[0].plot(time, surcharge, color='black', label='surcharge height')
 # 성토고 그래프 설정
 axes[0].set_ylabel("Surcharge height (m)", fontsize=17)
 axes[0].set_xlim(left=0)
+axes[0].grid(color="gray", alpha=.5, linestyle='--')
+axes[0].tick_params(direction='in')
 
 # 계측 및 예측 침하량 표시
 axes[1].scatter(time[0:settle.size], -settle, s=50, facecolors='white', edgecolors='black', label='measured data')
@@ -219,11 +222,14 @@ axes[1].plot(time_hyper, -sp_hyper_original,
              linestyle='--', color='red', label='Original Hyperbolic')
 
 # 침하량 그래프 설정
-axes[1].set_xlabel("Time (day)", fontsize=17)
-axes[1].set_ylabel("Settlement (mm)", fontsize=17)
+axes[1].set_xlabel("Time (day)", fontsize=15)
+axes[1].set_ylabel("Settlement (mm)", fontsize=15)
 axes[1].set_ylim(top=0)
 axes[1].set_ylim(bottom=-1.5 * settle.max())
 axes[1].set_xlim(left=0)
+axes[1].grid(color="gray", alpha=.5, linestyle='--')
+axes[1].tick_params(direction='in')
+
 
 # 범례 표시
 axes[1].legend(loc=1, ncol=2, frameon=True, fontsize=12)
