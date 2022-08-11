@@ -195,18 +195,9 @@ time_hyper = time_hyper + t0_hyper
 
 
 
-
-
-
-
-
-
-
-
 # =====================
 # Post-Processing
 # =====================
-
 
 # 그래프 크기, 서브 그래프 개수 및 비율 설정
 fig, axes = plt.subplots(2, 1, figsize=(10, 10),
