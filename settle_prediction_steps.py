@@ -59,12 +59,13 @@ surcharge = data['Surcharge'].to_numpy()
 
 # 현재 아래 값은 입력값으로 각 데이터로부터 추출해야 함
 step_start_index = [0, 10, 37]  # 성토 단계 시작 index
-step_end_index = [9, 36, 79]    # 성토 단계 끝 index --> max. index = 78
+step_end_index = [9, 36, 70]    # 성토 단계 끝 index --> max. index = 78
 final_index = time.size         # 마지만 계측 데이터 index + 1
 num_steps = 3                   # 성토 단계 횟수
 
 # todo: 최종 단계에 대해서는 계측 데이터 활용 구간을 조정이 가능해야함
 # step_end_index의 마지막 값을 조정하여 마지막 성토 구간의 계측 데이터 사용 구간을 조정 가능
+# 본 입력 파일에서는 38 ~ 79 사이의 값을 활용구간에 따라 조정해야 함
 
 
 
