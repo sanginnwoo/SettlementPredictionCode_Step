@@ -68,6 +68,9 @@ num_steps = 3                   # 성토 단계 횟수
 # step_end_index의 마지막 값을 조정하여 마지막 성토 구간의 계측 데이터 사용 구간을 조정 가능
 # 본 입력 파일에서는 38 ~ 79 사이의 값을 활용구간에 따라 조정해야 함
 
+# todo: 예측 때 활용하지 않은 계측값에 대해서 RMSE 산정
+
+
 
 
 # =================
@@ -229,7 +232,6 @@ axes[1].set_ylim(bottom=-1.5 * settle.max())
 axes[1].set_xlim(left=0)
 axes[1].grid(color="gray", alpha=.5, linestyle='--')
 axes[1].tick_params(direction='in')
-
 
 # 범례 표시
 axes[1].legend(loc=1, ncol=2, frameon=True, fontsize=12)
