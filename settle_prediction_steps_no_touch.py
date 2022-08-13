@@ -44,20 +44,26 @@ def fun_rmse(py1, py2):
 
 
 
-# ================================
-# 파일 설정 / Pre-processing (임시)
-# ================================
+# =================
+# 파일 설정 / 입력값
+# =================
 
-# 파일명 설정
+# 파일명 설정 : 임시
 #filename = "1_S-12.csv"
 #filename = "1_SP-11.csv"
 #filename = "1_SP-17.csv"
 #filename = "1_SP-23.csv"
 #filename = "3_SP3-65.csv"
-filename = "3_SP3-68.csv"
-#filename = "4_S-11.csv"
+#filename = "3_SP3-68.csv"
+filename = "4_S-11.csv"
 
-# 성토 단계 시작 index 리스트 초기화
+# 최종 성토 단계의 데이터 사용 퍼센트 설정 : 사용자 입력값
+final_step_predict_percent = 80
+
+# 추가 계측 구간 퍼센트 설정 : 사용자 입력값
+additional_predict_percent = 100
+
+# 성토 단계 시작 index 리스트 초기화 : 사용자 입력값
 step_start_index = []
 
 # 성토 단계 끝 index + 1 리스트 초기화
@@ -122,9 +128,6 @@ final_index = time.size
 # 최종 단계 데이터 사용 범위 조정
 # ===========================
 
-# 최종 성토 단계의 데이터 사용 퍼센트 설정 : 사용자 입력값
-final_step_predict_percent = 60
-
 # 데이터 사용 퍼센트에 해당하는 기간 계산
 final_step_end_date = time[-1]
 final_step_start_date = time[step_start_index[num_steps - 1]]
@@ -143,6 +146,7 @@ for day in time:
         break
 
 # 마지막 성토 단계, 마지막 계측 시점 인덱스 업데이트
+final_step_monitor_end_index = step_end_index[num_steps - 1]
 step_end_index[num_steps - 1] = final_step_predict_end_index
 
 
@@ -151,8 +155,8 @@ step_end_index[num_steps - 1] = final_step_predict_end_index
 # 추가 예측 구간 반영
 # =================
 
-# 추가 예측 일 입력
-add_days = time[-1]
+# 추가 예측 일 입력 (현재 전체 계측일 * 계수)
+add_days = (additional_predict_percent / 100) * time[-1]
 
 # 마지막 성토고 및 마지막 계측일 저장
 final_surcharge = surcharge[final_index - 1]
@@ -287,11 +291,19 @@ time_hyper = time_hyper + t0_hyper
 # RSME 산정
 # ==========
 
-# RMSE 계산 데이터 구간 설정 (계측, 단계,  비선형 쌍곡선, 기존 쌍곡선)
-sm_rmse = settle[step_start_index[num_steps - 1]:final_step_predict_end_index]
-sp_step_rmse = sp_step[step_start_index[num_steps - 1]:final_step_predict_end_index]
-sp_hyper_nonlinear_rmse = sp_hyper_nonlinear[:final_step_predict_end_index - step_start_index[num_steps - 1]]
-sp_hyper_original_rmse = sp_hyper_original[:final_step_predict_end_index - step_start_index[num_steps - 1]]
+# RMSE 계산 데이터 구간 설정 (계측)
+sm_rmse = settle[final_step_predict_end_index:final_step_monitor_end_index]
+
+# RMSE 계산 데이터 구간 설정 (단계)
+sp_step_rmse = sp_step[final_step_predict_end_index:final_step_monitor_end_index]
+
+# RMSE 계산 데이터 구간 설정 (쌍곡선)
+sp_hyper_nonlinear_rmse = sp_hyper_nonlinear[final_step_predict_end_index - step_start_index[num_steps - 1]:
+                                             final_step_predict_end_index - step_start_index[num_steps - 1] +
+                                             final_step_monitor_end_index - final_step_predict_end_index]
+sp_hyper_original_rmse = sp_hyper_original[final_step_predict_end_index - step_start_index[num_steps - 1]:
+                                           final_step_predict_end_index - step_start_index[num_steps - 1] +
+                                           final_step_monitor_end_index - final_step_predict_end_index]
 
 # RMSE 산정  (단계, 비선형 쌍곡선, 기존 쌍곡선)
 RMSE_step = fun_rmse(sm_rmse, sp_step_rmse)
@@ -311,7 +323,7 @@ print("RMSE(Original Hyperbolic): %0.3f" %RMSE_hyper_original)
 
 # 그래프 크기, 서브 그래프 개수 및 비율 설정
 fig, axes = plt.subplots(2, 1, figsize=(10, 10),
-                         gridspec_kw={'height_ratios':[1,2]})
+                         gridspec_kw={'height_ratios':[1,3]})
 
 # 성토고 그래프 표시
 axes[0].plot(time, surcharge, color='black', label='surcharge height')
@@ -344,11 +356,11 @@ axes[1].legend(loc=1, ncol=2, frameon=True, fontsize=12)
 
 # 예측 데이터 사용 범위 음영 처리 - 단계성토
 plt.axvspan(0, final_step_predict_end_date,
-            alpha=0.2, color='grey', hatch='///')
+            alpha=0.1, color='grey', hatch='//')
 
 # 예측 데이터 사용 범위 음영 처리 - 기존 및 비선형 쌍곡선
 plt.axvspan(final_step_start_date, final_step_predict_end_date,
-            alpha=0.2, color='grey', hatch='///')
+            alpha=0.1, color='grey', hatch='\\')
 
 # 예측 데이터 사용 범위 표시 화살표 세로 위치 설정
 arrow1_y_loc = 1.3 * min(-settle)
@@ -379,6 +391,25 @@ plt.annotate('Data Range Used (Nonlinear + Step Loading)', xy=(final_step_predic
 # 예측 데이터 사용 범위 범례 표시 - 기존 및 비선형 쌍곡선
 plt.annotate('Data Range Used (Nonlinear and Original Hyperbolic)', xy=(final_step_predict_end_date, arrow1_y_loc),
              xytext=(final_step_predict_end_date + space, arrow2_y_loc),
+             horizontalalignment='left', verticalalignment='center')
+
+# RMSE 산정 범위 표시 화살표 세로 위치 설정
+arrow3_y_loc = 0.5 * min(-settle)
+
+# RMSE 산정 범위 화살표 표시
+axes[1].arrow(final_step_predict_end_date, arrow3_y_loc,
+              final_step_end_date - final_step_predict_end_date, 0,
+              head_width=10, color='black', length_includes_head='True')
+axes[1].arrow(final_step_end_date, arrow3_y_loc,
+              final_step_predict_end_date - final_step_end_date, 0,
+              head_width=10, color='black', length_includes_head='True')
+
+# RMSE 산정 범위 세로선 설정
+axes[1].axvline(x=final_step_end_date, color='silver', linestyle=':')
+
+# RMSE 산정 범위 범례 표시 - 단계성토
+plt.annotate('RMSE Estimation Section', xy=(final_step_end_date, arrow3_y_loc),
+             xytext=(final_step_end_date + space, arrow3_y_loc),
              horizontalalignment='left', verticalalignment='center')
 
 # RMSE 출력
