@@ -288,7 +288,7 @@ time_hyper = time_hyper + t0_hyper
 
 
 # ==========
-# RSME 산정
+# 에러 산정
 # ==========
 
 # RMSE 계산 데이터 구간 설정 (계측)
@@ -451,14 +451,12 @@ plt.text(max(time), 0.65 * min(-settle),
          color='r', horizontalalignment='right',
          verticalalignment='top', fontsize='12', bbox=mybox)
 
-
 # 그래프 제목 표시
 plt.title(filename + ": up to %i percent data used in the final step" % final_step_predict_percent)
 
 # 그래프 저장 (SVG 및 PNG)
 plt.savefig(filename +' %i percent (SVG).svg' %final_step_predict_percent, dpi=300)
 plt.savefig(filename +' %i percent (PNG).png' %final_step_predict_percent, dpi=300)
-
 
 # 그래프 출력
 plt.show()
