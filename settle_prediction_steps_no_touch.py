@@ -332,7 +332,7 @@ print("Error in Final Settlement (Original Hyperbolic): %0.3f" %final_error_hype
 # =====================
 
 # 그래프 크기, 서브 그래프 개수 및 비율 설정
-fig, axes = plt.subplots(2, 1, figsize=(10, 10),
+fig, axes = plt.subplots(2, 1, figsize=(12, 9),
                          gridspec_kw={'height_ratios':[1,3]})
 
 # 성토고 그래프 표시
@@ -378,7 +378,7 @@ arrow2_y_loc = 1.4 * min(-settle)
 
 # 화살표 크기 설정
 arrow_head_width = 0.03 * max(settle)
-arrow_head_length = 0.03 * max(settle)
+arrow_head_length = 0.01 * max(time)
 
 # 예측 데이터 사용 범위 화살표 처리 - 단계성토
 axes[1].arrow(0, arrow1_y_loc, final_step_predict_end_date, 0,
@@ -452,11 +452,11 @@ plt.text(max(time), 0.65 * min(-settle),
          verticalalignment='top', fontsize='12', bbox=mybox)
 
 # 그래프 제목 표시
-plt.title(filename + ": up to %i percent data used in the final step" % final_step_predict_percent)
+plt.title(filename + ": up to %i%% data used in the final step" % final_step_predict_percent)
 
 # 그래프 저장 (SVG 및 PNG)
-plt.savefig(filename +' %i percent (SVG).svg' %final_step_predict_percent, dpi=300)
-plt.savefig(filename +' %i percent (PNG).png' %final_step_predict_percent, dpi=300)
+plt.savefig(filename +' %i percent (SVG).svg' %final_step_predict_percent, bbox_inches='tight')
+plt.savefig(filename +' %i percent (PNG).png' %final_step_predict_percent, bbox_inches='tight')
 
 # 그래프 출력
 plt.show()
