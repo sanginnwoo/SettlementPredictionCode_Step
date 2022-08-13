@@ -311,9 +311,19 @@ RMSE_hyper_nonlinear = fun_rmse(sm_rmse, sp_hyper_nonlinear_rmse)
 RMSE_hyper_original = fun_rmse(sm_rmse, sp_hyper_original_rmse)
 
 # RMSE 출력 (단계, 비선형 쌍곡선, 기존 쌍곡선)
-print("RMSE(Nonlinear Hyper + Step): %0.3f" %RMSE_step)
-print("RMSE(Nonlinear Hyperbolic): %0.3f" %RMSE_hyper_nonlinear)
-print("RMSE(Original Hyperbolic): %0.3f" %RMSE_hyper_original)
+print("RMSE (Nonlinear Hyper + Step): %0.3f" %RMSE_step)
+print("RMSE (Nonlinear Hyperbolic): %0.3f" %RMSE_hyper_nonlinear)
+print("RMSE (Original Hyperbolic): %0.3f" %RMSE_hyper_original)
+
+# (최종 계측 침하량 - 예측 침하량) 계산
+final_error_step = settle[-1] - sp_step_rmse[-1]
+final_error_hyper_nonlinear = settle[-1] - sp_hyper_nonlinear_rmse[-1]
+final_error_hyper_original = settle[-1] - sp_hyper_original_rmse[-1]
+
+# (최종 계측 침하량 - 예측 침하량) 출력 (단계, 비선형 쌍곡선, 기존 쌍곡선)
+print("Error in Final Settlement (Nonlinear Hyper + Step): %0.3f" %final_error_step)
+print("Error in Final Settlement (Nonlinear Hyperbolic): %0.3f" %final_error_hyper_nonlinear)
+print("Error in Final Settlement (Original Hyperbolic): %0.3f" %final_error_hyper_original)
 
 
 
@@ -344,7 +354,7 @@ axes[1].plot(time_hyper, -sp_hyper_original,
 
 # 침하량 그래프 설정
 axes[1].set_xlabel("Time (day)", fontsize=15)
-axes[1].set_ylabel("Settlement (mm)", fontsize=15)
+axes[1].set_ylabel("Settlement (cm)", fontsize=15)
 axes[1].set_ylim(top=0)
 axes[1].set_ylim(bottom=-1.5 * settle.max())
 axes[1].set_xlim(left=0)
@@ -366,19 +376,27 @@ plt.axvspan(final_step_start_date, final_step_predict_end_date,
 arrow1_y_loc = 1.3 * min(-settle)
 arrow2_y_loc = 1.4 * min(-settle)
 
+# 화살표 크기 설정
+arrow_head_width = 0.03 * max(settle)
+arrow_head_length = 0.03 * max(settle)
+
 # 예측 데이터 사용 범위 화살표 처리 - 단계성토
 axes[1].arrow(0, arrow1_y_loc, final_step_predict_end_date, 0,
-              head_width=10, color='black', length_includes_head='True')
+              head_width=arrow_head_width, head_length=arrow_head_length,
+              color='black', length_includes_head='True')
 axes[1].arrow(final_step_predict_end_date, arrow1_y_loc, -final_step_predict_end_date, 0,
-              head_width=10, color='black', length_includes_head='True')
+              head_width=arrow_head_width, head_length=arrow_head_length,
+              color='black', length_includes_head='True')
 
 # 예측 데이터 사용 범위 화살표 처리 - 기존 및 비선형 쌍곡선
 axes[1].arrow(final_step_start_date, arrow2_y_loc,
               final_step_predict_end_date - final_step_start_date, 0,
-              head_width=10, color='black', length_includes_head='True')
+              head_width=arrow_head_width, head_length=arrow_head_length,
+              color='black', length_includes_head='True')
 axes[1].arrow(final_step_predict_end_date, arrow2_y_loc,
               final_step_start_date - final_step_predict_end_date, 0,
-              head_width=10, color='black', length_includes_head='True')
+              head_width=arrow_head_width, head_length=arrow_head_length,
+              color='black', length_includes_head='True')
 
 # Annotation 표시용 공간 설정
 space = max(time) * 0.01
@@ -394,35 +412,53 @@ plt.annotate('Data Range Used (Nonlinear and Original Hyperbolic)', xy=(final_st
              horizontalalignment='left', verticalalignment='center')
 
 # RMSE 산정 범위 표시 화살표 세로 위치 설정
-arrow3_y_loc = 0.5 * min(-settle)
+arrow3_y_loc = 0.55 * min(-settle)
 
 # RMSE 산정 범위 화살표 표시
 axes[1].arrow(final_step_predict_end_date, arrow3_y_loc,
               final_step_end_date - final_step_predict_end_date, 0,
-              head_width=10, color='black', length_includes_head='True')
+              head_width=arrow_head_width, head_length=arrow_head_length,
+              color='black', length_includes_head='True')
 axes[1].arrow(final_step_end_date, arrow3_y_loc,
               final_step_predict_end_date - final_step_end_date, 0,
-              head_width=10, color='black', length_includes_head='True')
+              head_width=arrow_head_width, head_length=arrow_head_length,
+              color='black', length_includes_head='True')
 
 # RMSE 산정 범위 세로선 설정
 axes[1].axvline(x=final_step_end_date, color='silver', linestyle=':')
 
-# RMSE 산정 범위 범례 표시 - 단계성토
+# RMSE 산정 범위 범례 표시
 plt.annotate('RMSE Estimation Section', xy=(final_step_end_date, arrow3_y_loc),
              xytext=(final_step_end_date + space, arrow3_y_loc),
              horizontalalignment='left', verticalalignment='center')
 
 # RMSE 출력
-mybox = {'facecolor': 'white', 'edgecolor': 'black', 'boxstyle': 'round', 'alpha': 0.4}
+mybox = {'facecolor': 'white', 'edgecolor': 'black', 'boxstyle': 'round', 'alpha': 0.2}
 plt.text(max(time), 0.25 * min(-settle),
-         " RMSE (Nonlinear + Step Loading) = %0.3f" % RMSE_step
-         + "\n" + " RMSE (Nonlinear Hyperbolic) = %0.3f" % RMSE_hyper_nonlinear
-         + "\n" + " RMSE (Original Hyperbolic) = %0.3f" % RMSE_hyper_original,
+         "Root Mean Squared Error"
+         + "\n" + "Nonlinear + Step Loading: %0.3f" % RMSE_step
+         + "\n" + "Nonlinear Hyperbolic: %0.3f" % RMSE_hyper_nonlinear
+         + "\n" + "Original Hyperbolic: %0.3f" % RMSE_hyper_original,
          color='r', horizontalalignment='right',
          verticalalignment='top', fontsize='12', bbox=mybox)
 
-# 그래프 저장
-plt.savefig('output.svg')
+# (최종 계측 침하량 - 예측값) 출력
+plt.text(max(time), 0.65 * min(-settle),
+         "Error in Final Monitored Settlement"
+         + "\n" + "Nonlinear + Step Loading: %0.3f" % final_error_step
+         + "\n" + "Nonlinear Hyperbolic: %0.3f" % final_error_hyper_nonlinear
+         + "\n" + "Original Hyperbolic: %0.3f" % final_error_hyper_original,
+         color='r', horizontalalignment='right',
+         verticalalignment='top', fontsize='12', bbox=mybox)
+
+
+# 그래프 제목 표시
+plt.title(filename + ": up to %i percent data used in the final step" % final_step_predict_percent)
+
+# 그래프 저장 (SVG 및 PNG)
+plt.savefig(filename +' %i percent (SVG).svg' %final_step_predict_percent, dpi=300)
+plt.savefig(filename +' %i percent (PNG).png' %final_step_predict_percent, dpi=300)
+
 
 # 그래프 출력
 plt.show()
