@@ -4,7 +4,7 @@ Main Developer: Sang Inn Woo, Ph.D. @ Incheon National University
 Starting Date: 2022-08-11
 Abstract:
 This main objective of this code is to predict
-time vs. (consolidation) settlement of soft clay ground
+time vs. (consolidation) settlement curves of soft clay ground
 under step loading conditions.
 The methodologies used are 1) superposition of time-settlement curves
 and 2) nonlinear regression for hyperbolic curves.
