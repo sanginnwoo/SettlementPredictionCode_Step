@@ -55,10 +55,11 @@ def fun_rmse(py1, py2):
 #filename = "1_SP-23.csv"
 #filename = "3_SP3-65.csv"
 #filename = "3_SP3-68.csv"
-filename = "4_S-11.csv"
+#filename = "4_S-11.csv"
+filename = "west_test_2_5_No_54.csv"
 
 # 최종 성토 단계의 데이터 사용 퍼센트 설정 : 사용자 입력값
-final_step_predict_percent = 80
+final_step_predict_percent = 20
 
 # 추가 계측 구간 퍼센트 설정 : 사용자 입력값
 additional_predict_percent = 100
@@ -91,6 +92,9 @@ elif filename == "3_SP3-68.csv":
 elif filename == "4_S-11.csv":
     step_start_index = [0, 10, 46, 51, 120]
     step_end_index = [10, 46, 51, 120, 157]
+elif filename == "west_test_2_5_No_54.csv":
+    step_start_index = [111, 269]
+    step_end_index = [269, 409]
 
 # 성토 단계 횟수 파악 및 저장
 num_steps = len(step_start_index)
