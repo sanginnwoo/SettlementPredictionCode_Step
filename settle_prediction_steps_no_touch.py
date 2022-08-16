@@ -59,7 +59,7 @@ def fun_rmse(py1, py2):
 filename = "west_test_2_5_No_54.csv"
 
 # 최종 성토 단계의 데이터 사용 퍼센트 설정 : 사용자 입력값
-final_step_predict_percent = 20
+final_step_predict_percent = 80
 
 # 추가 계측 구간 퍼센트 설정 : 사용자 입력값
 additional_predict_percent = 100
@@ -93,8 +93,8 @@ elif filename == "4_S-11.csv":
     step_start_index = [0, 10, 46, 51, 120]
     step_end_index = [10, 46, 51, 120, 157]
 elif filename == "west_test_2_5_No_54.csv":
-    step_start_index = [111, 269]
-    step_end_index = [269, 409]
+    step_start_index = [111, 195, 269, 287]
+    step_end_index = [195, 269, 287, 409]
 
 # 성토 단계 횟수 파악 및 저장
 num_steps = len(step_start_index)
@@ -125,6 +125,11 @@ final_index = time.size
 # todo: 성토고 데이터를 분석하여, 각 단계 계측 시작 및 끝일에 해당하는 인덱스 파악 필요
 # 꼭 이전 단계 마지막 인덱스와 현재 단계 처음 인덱스가 이어질 필요는 없음
 # (각 단계별 시간, 침하를 초기화 한후 예측을 수행하므로...)
+
+#creteria_buffer
+#creteria_num_data
+#
+
 
 
 
@@ -221,7 +226,9 @@ for i in range(0, num_steps):
 
     # 회귀분석 시행
     res_lsq_hyper_nonlinear \
-        = least_squares(fun_hyper_nonlinear, x0, args=(tm_this_step, sm_this_step))
+        = least_squares(fun_hyper_nonlinear, x0,
+                        bounds=((0, 0),(np.inf, np.inf)),
+                        args=(tm_this_step, sm_this_step))
 
     # 쌍곡선 계수 저장 및 출력
     x_step = res_lsq_hyper_nonlinear.x
@@ -350,7 +357,7 @@ axes[0].tick_params(direction='in')
 
 # 계측 및 예측 침하량 표시
 axes[1].scatter(time[0:settle.size], -settle, s=50, facecolors='white', edgecolors='black', label='measured data')
-axes[1].plot(time, -sp_step, linestyle='-', color='blue', label='Nonlinear + Step Loading')
+axes[1].plot(time[step_start_index[0]:], -sp_step[step_start_index[0]:], linestyle='-', color='blue', label='Nonlinear + Step Loading')
 axes[1].plot(time_hyper, -sp_hyper_nonlinear,
              linestyle='--', color='green', label='Nonlinear Hyperbolic')
 axes[1].plot(time_hyper, -sp_hyper_original,
@@ -369,7 +376,7 @@ axes[1].tick_params(direction='in')
 axes[1].legend(loc=1, ncol=2, frameon=True, fontsize=12)
 
 # 예측 데이터 사용 범위 음영 처리 - 단계성토
-plt.axvspan(0, final_step_predict_end_date,
+plt.axvspan(time[step_start_index[0]], final_step_predict_end_date,
             alpha=0.1, color='grey', hatch='//')
 
 # 예측 데이터 사용 범위 음영 처리 - 기존 및 비선형 쌍곡선
@@ -385,10 +392,12 @@ arrow_head_width = 0.03 * max(settle)
 arrow_head_length = 0.01 * max(time)
 
 # 예측 데이터 사용 범위 화살표 처리 - 단계성토
-axes[1].arrow(0, arrow1_y_loc, final_step_predict_end_date, 0,
+axes[1].arrow(time[step_start_index[0]], arrow1_y_loc,
+              final_step_predict_end_date - time[step_start_index[0]], 0,
               head_width=arrow_head_width, head_length=arrow_head_length,
               color='black', length_includes_head='True')
-axes[1].arrow(final_step_predict_end_date, arrow1_y_loc, -final_step_predict_end_date, 0,
+axes[1].arrow(final_step_predict_end_date, arrow1_y_loc,
+              time[step_start_index[0]] - final_step_predict_end_date, 0,
               head_width=arrow_head_width, head_length=arrow_head_length,
               color='black', length_includes_head='True')
 
