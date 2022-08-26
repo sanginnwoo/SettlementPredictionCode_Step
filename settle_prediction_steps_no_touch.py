@@ -49,15 +49,16 @@ def fun_rmse(py1, py2):
 # =================
 
 # 파일명 설정 : 임시
-filename = "data\"
-#filename += "1_S-12.csv"
-#filename += "1_SP-11.csv"
-#filename += "1_SP-17.csv"
-#filename += "1_SP-23.csv"
-#filename += "3_SP3-65.csv"
-#filename += "3_SP3-68.csv"
-filename += "4_S-11.csv"
-#filename += "west_test_2_5_No_54.csv"
+data_folder_name = "data"
+output_foler_name = "output"
+#filename = "1_S-12.csv"
+#filename = "1_SP-11.csv"
+#filename = "1_SP-17.csv"
+#filename = "1_SP-23.csv"
+#filename = "3_SP3-65.csv"
+#filename = "3_SP3-68.csv"
+filename = "4_S-11.csv"
+#filename = "west_test_2_5_No_54.csv"
 
 # 최종 성토 단계의 데이터 사용 퍼센트 설정 : 사용자 입력값
 final_step_predict_percent = 20
@@ -107,7 +108,7 @@ num_steps = len(step_start_index)
 # ====================
 
 # CSV 파일 읽기
-data = pd.read_csv(filename)
+data = pd.read_csv(data_folder_name + '/' + filename)
 
 # 시간, 침하량, 성토고 배열 생성
 time = data['Time'].to_numpy()
@@ -469,8 +470,8 @@ plt.text(max(time), 0.65 * min(-settle),
 plt.title(filename + ": up to %i%% data used in the final step" % final_step_predict_percent)
 
 # 그래프 저장 (SVG 및 PNG)
-plt.savefig(filename +' %i percent (SVG).svg' %final_step_predict_percent, bbox_inches='tight')
-plt.savefig(filename +' %i percent (PNG).png' %final_step_predict_percent, bbox_inches='tight')
+plt.savefig(output_foler_name + '/' + filename +' %i percent (SVG).svg' %final_step_predict_percent, bbox_inches='tight')
+plt.savefig(output_foler_name + '/' + filename +' %i percent (PNG).png' %final_step_predict_percent, bbox_inches='tight')
 
 # 그래프 출력
 plt.show()

@@ -55,7 +55,7 @@ def fun_rmse(py1, py2):
 #filename = "1_SP-23.csv"
 #filename = "3_SP3-65.csv"
 #filename = "3_SP3-68.csv"
-filename = "4_S-11.csv"
+filename = "data/4_S-11.csv"
 
 # 성토 단계 시작 index 리스트 초기화
 step_start_index = []
