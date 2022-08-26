@@ -48,9 +48,13 @@ def fun_rmse(py1, py2):
 # 파일 설정 / 입력값
 # =================
 
-# 파일명 설정 : 임시
+# TODO: Argument를 이용해서 입력을 받을 수 있도록 설정 할 것
+
+# 데이터 보관 폴더 및 결과 파일 저장 폴더 설정
 data_folder_name = "data"
 output_foler_name = "output"
+
+# 파일명 설정
 #filename = "1_S-12.csv"
 #filename = "1_SP-11.csv"
 #filename = "1_SP-17.csv"
@@ -66,11 +70,17 @@ final_step_predict_percent = 20
 # 추가 계측 구간 퍼센트 설정 : 사용자 입력값
 additional_predict_percent = 100
 
-# 성토 단계 시작 index 리스트 초기화 : 사용자 입력값
+# 성토 단계 시작 index 리스트 초기화
 step_start_index = []
 
 # 성토 단계 끝 index + 1 리스트 초기화
 step_end_index = []
+
+# TODO: 성토 단계를 분석해서 Step을 설정할 수 있도록 수정할 것
+# 고려사항 1: 안정된 분석을 위해서는 성토 시작일로부터 얼마 후 데이터를 활용할 것인가? --> Buffer 설정
+# 고려사항 2: 데이터 개수가 충분한가? --> 최소 데이터량 결정
+# 고려사항 3: 시간-침하 곡선 형태가 직선이나 음의 곡률을 가질 경우, 어떻게 할 것인가 --> 회귀분석 불가 구역
+# 고려사항 4: 상기 사항을 만족하지 않은 Step을 제외하고 분석을 수행할 수 있는가?
 
 # 파일명에 따라서, 성토 단계 index 설정
 if filename == "1_S-12.csv":
@@ -127,11 +137,6 @@ final_index = time.size
 # todo: 성토고 데이터를 분석하여, 각 단계 계측 시작 및 끝일에 해당하는 인덱스 파악 필요
 # 꼭 이전 단계 마지막 인덱스와 현재 단계 처음 인덱스가 이어질 필요는 없음
 # (각 단계별 시간, 침하를 초기화 한후 예측을 수행하므로...)
-
-#creteria_buffer
-#creteria_num_data
-#
-
 
 
 
