@@ -49,14 +49,15 @@ def fun_rmse(py1, py2):
 # =================
 
 # 파일명 설정 : 임시
-#filename = "1_S-12.csv"
-#filename = "1_SP-11.csv"
-#filename = "1_SP-17.csv"
-#filename = "1_SP-23.csv"
-#filename = "3_SP3-65.csv"
-#filename = "3_SP3-68.csv"
-filename = "4_S-11.csv"
-#filename = "west_test_2_5_No_54.csv"
+filename = "data\"
+#filename += "1_S-12.csv"
+#filename += "1_SP-11.csv"
+#filename += "1_SP-17.csv"
+#filename += "1_SP-23.csv"
+#filename += "3_SP3-65.csv"
+#filename += "3_SP3-68.csv"
+filename += "4_S-11.csv"
+#filename += "west_test_2_5_No_54.csv"
 
 # 최종 성토 단계의 데이터 사용 퍼센트 설정 : 사용자 입력값
 final_step_predict_percent = 20

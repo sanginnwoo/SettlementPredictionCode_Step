@@ -42,7 +42,7 @@ def fun_step_prediction_correction(m2, p2):
 # 파일 읽기, 리스트 설정
 
 # Read .csv file using pandas
-data = pd.read_csv("1_SP-11.csv")
+data = pd.read_csv("data/1_SP-11.csv")
 
 # Set arrays for time and settlement
 time = data['Time'].to_numpy()
