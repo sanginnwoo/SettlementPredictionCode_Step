@@ -10,6 +10,8 @@ The methodologies used are 1) superposition of time-settlement curves
 and 2) nonlinear regression for hyperbolic curves.
 """
 
+# TODO: Asaoka 법 코드 삽입
+
 # =================
 # Import 섹션
 # =================
@@ -48,7 +50,7 @@ def fun_rmse(py1, py2):
 # 파일 설정 / 입력값
 # =================
 
-# TODO: Argument를 이용해서 입력을 받을 수 있도록 설정 할 것
+# TODO: Argument를 이용해서 데이터 파일명을 입력 받도록 수정 필요
 
 # 데이터 보관 폴더 및 결과 파일 저장 폴더 설정
 data_folder_name = "data"
