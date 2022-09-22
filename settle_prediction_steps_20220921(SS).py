@@ -129,7 +129,6 @@ surcharge = data['Surcharge'].to_numpy()
 final_index = time.size
 
 
-
 # =================
 # 성토 단계 구분
 # =================
