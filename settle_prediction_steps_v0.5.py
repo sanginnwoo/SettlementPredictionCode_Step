@@ -139,28 +139,6 @@ step_end_index.append(len(surcharge) - 1)
 # 성토 단계 횟수 파악 및 저장
 num_steps = len(step_start_index)
 
-# TODO: 직접 파악한 성토 단계 index와 코드로 파악한 성토 단계 index 비교 필요
-''' 직접 파악한 성토 단계 index
-if filename == "1_S-12.csv":
-    step_start_index = [0, 56]
-    step_end_index = [56, 143]
-elif filename == "1_SP-11.csv":
-    step_start_index = [0, 10, 37, 79]
-    step_end_index = [10, 37, 79, 124]
-elif filename == "1_SP-23.csv":
-    step_start_index = [0, 18, 40, 90]
-    step_end_index = [18, 40, 90, 124]
-elif filename == "3_SP3-65.csv":
-    step_start_index = [0, 94, 136]
-    step_end_index = [ 94, 136, 182]
-elif filename == "3_SP3-68.csv":
-    step_start_index = [0, 9, 48, 88]
-    step_end_index = [9, 48, 88, 127]
-elif filename == "4_S-11.csv":
-    step_start_index = [0, 10, 46, 51, 120]
-    step_end_index = [10, 46, 51, 120, 157]
-'''
-
 
 
 # ===========================
