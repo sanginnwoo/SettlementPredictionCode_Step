@@ -65,7 +65,7 @@ filename = "1_S-12.csv"
 #filename = "4_S-11.csv"
 
 # 최종 성토 단계의 데이터 사용 퍼센트 설정 : 사용자 입력값
-final_step_predict_percent = 20
+final_step_predict_percent = 50
 
 # 추가 계측 구간 퍼센트 설정 : 사용자 입력값
 additional_predict_percent = 100
@@ -99,6 +99,7 @@ final_index = time.size
 # =================
 # 성토 단계 구분
 # =================
+# TODO: 개선 필요 --> 각 성토 단계의 Index가 꼭 연결될 필요는 없음
 
 # 성토 단계 시작 index 리스트 초기화
 step_start_index = [0]
@@ -124,7 +125,8 @@ for index in range(len(surcharge)):
 
         # 시간 SPAN이 30일 이상일 경우,
         if current_date - step_start_date > step_date_buffer:
-            # Index를 추가함
+
+            # Index를 추가
             step_end_index.append(index)
             step_start_index.append(index)
 
