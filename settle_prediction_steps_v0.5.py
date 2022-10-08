@@ -57,14 +57,12 @@ data_folder_name = "data"
 output_foler_name = "output"
 
 # 파일명 설정
-#filename = "1_S-12.csv"
+filename = "1_S-12.csv"
 #filename = "1_SP-11.csv"
-#filename = "1_SP-17.csv"
 #filename = "1_SP-23.csv"
 #filename = "3_SP3-65.csv"
 #filename = "3_SP3-68.csv"
-filename = "4_S-11.csv"
-#filename = "west_test_2_5_No_54.csv"
+#filename = "4_S-11.csv"
 
 # 최종 성토 단계의 데이터 사용 퍼센트 설정 : 사용자 입력값
 final_step_predict_percent = 20
@@ -72,46 +70,14 @@ final_step_predict_percent = 20
 # 추가 계측 구간 퍼센트 설정 : 사용자 입력값
 additional_predict_percent = 100
 
-# 성토 단계 시작 index 리스트 초기화
-step_start_index = []
+# 성토고 구분 버퍼값 : 사용자 입력값
+step_date_buffer = 35
 
-# 성토 단계 끝 index + 1 리스트 초기화
-step_end_index = []
+# 안정된 분석을 위해서는 충분히 많은 데이터가 필요함
+# 성토 단계가 너무 짧을 경우, 데이터 개수가 충분치 않아 해석이 힘듦
+# Buffer 설정: 최소 30일 이상의 방치 기간 필요 설정
 
-# TODO: 성토 단계를 분석해서 Step을 설정할 수 있도록 수정할 것
-# 고려사항 1: 안정된 분석을 위해서는 성토 시작일로부터 얼마 후 데이터를 활용할 것인가? --> Buffer 설정
-# 고려사항 2: 데이터 개수가 충분한가? --> 최소 데이터량 결정
-# 고려사항 3: 시간-침하 곡선 형태가 직선이나 음의 곡률을 가질 경우, 어떻게 할 것인가 --> 회귀분석 불가 구역
-# 고려사항 4: 상기 사항을 만족하지 않은 Step을 제외하고 분석을 수행할 수 있는가?
 
-# 파일명에 따라서, 성토 단계 index 설정
-'''
-if filename == "1_S-12.csv":
-    step_start_index = [0, 56]
-    step_end_index = [56, 143]
-elif filename == "1_SP-11.csv":
-    step_start_index = [0, 10, 37, 79]
-    step_end_index = [10, 37, 79, 124]
-elif filename == "1_SP-17.csv":
-    step_start_index = [0, 122]
-    step_end_index = [122, 163]
-elif filename == "1_SP-23.csv":
-    step_start_index = [0, 18, 40, 90]
-    step_end_index = [18, 40, 90, 124]
-elif filename == "3_SP3-65.csv":
-    step_start_index = [0, 94, 136]
-    step_end_index = [ 94, 136, 182]
-elif filename == "3_SP3-68.csv":
-    step_start_index = [0, 9, 48, 88]
-    step_end_index = [9, 48, 88, 127]
-elif filename == "4_S-11.csv":
-    step_start_index = [0, 10, 46, 51, 120]
-    step_end_index = [10, 46, 51, 120, 157]
-elif filename == "west_test_2_5_No_54.csv":
-    step_start_index = [111, 195, 269, 287]
-    step_end_index = [195, 269, 287, 409]
-    
-'''
 
 # ====================
 # 파일 읽기, 데이터 설정
@@ -129,28 +95,71 @@ surcharge = data['Surcharge'].to_numpy()
 final_index = time.size
 
 
+
 # =================
 # 성토 단계 구분
 # =================
 
-# 성토 단계 index 생성
-current_surcharge = surcharge[0]
+# 성토 단계 시작 index 리스트 초기화
 step_start_index = [0]
-start_index_counter = 0
+
+# 성토 단계 끝 index 리스트 초기화
 step_end_index = []
 
-for index in range(len(surcharge)) :
-    if surcharge[index]!=current_surcharge :
-        current_surcharge = surcharge[index]
-        step_start_index.append(index)
-        step_end_index.append(index)
-    start_index_counter = start_index_counter + 1
+# 현재 성토고 설정
+current_surcharge = surcharge[0]
 
-    if index == len(surcharge) - 1:
-        step_end_index.append(index)
+# 단계 시작 시점 초기화
+step_start_date = 0
+
+# 모든 시간-성토고 데이터에서 순차적으로 확인
+for index in range(len(surcharge)):
+
+    # 만일 성토고의 변화가 있을 경우,
+    if surcharge[index] != current_surcharge:
+
+        # 현재 시간과 성토로를 설정
+        current_date = time[index]
+        current_surcharge = surcharge[index]
+
+        # 시간 SPAN이 30일 이상일 경우,
+        if current_date - step_start_date > step_date_buffer:
+            # Index를 추가함
+            step_end_index.append(index)
+            step_start_index.append(index)
+
+            # 단계 시작일 업데이트
+            step_start_date = current_date
+
+# 마지막 성토 단계 끝 index 추가
+step_end_index.append(len(surcharge) - 1)
 
 # 성토 단계 횟수 파악 및 저장
 num_steps = len(step_start_index)
+
+# TODO: 직접 파악한 성토 단계 index와 코드로 파악한 성토 단계 index 비교 필요
+''' 직접 파악한 성토 단계 index
+if filename == "1_S-12.csv":
+    step_start_index = [0, 56]
+    step_end_index = [56, 143]
+elif filename == "1_SP-11.csv":
+    step_start_index = [0, 10, 37, 79]
+    step_end_index = [10, 37, 79, 124]
+elif filename == "1_SP-23.csv":
+    step_start_index = [0, 18, 40, 90]
+    step_end_index = [18, 40, 90, 124]
+elif filename == "3_SP3-65.csv":
+    step_start_index = [0, 94, 136]
+    step_end_index = [ 94, 136, 182]
+elif filename == "3_SP3-68.csv":
+    step_start_index = [0, 9, 48, 88]
+    step_end_index = [9, 48, 88, 127]
+elif filename == "4_S-11.csv":
+    step_start_index = [0, 10, 46, 51, 120]
+    step_end_index = [10, 46, 51, 120, 157]
+'''
+
+
 
 # ===========================
 # 최종 단계 데이터 사용 범위 조정
