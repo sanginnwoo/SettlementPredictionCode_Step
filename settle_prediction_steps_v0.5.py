@@ -10,7 +10,7 @@ The methodologies used are 1) superposition of time-settlement curves
 and 2) nonlinear regression for hyperbolic curves.
 """
 
-# TODO: Asaoka 법 코드 삽입
+
 
 # =================
 # Import 섹션
@@ -57,25 +57,18 @@ data_folder_name = "data"
 output_foler_name = "output"
 
 # 파일명 설정
-filename = "1_S-12.csv"
+#filename = "1_S-12.csv"
 #filename = "1_SP-11.csv"
 #filename = "1_SP-23.csv"
 #filename = "3_SP3-65.csv"
 #filename = "3_SP3-68.csv"
-#filename = "4_S-11.csv"
+filename = "4_S-11.csv"
 
 # 최종 성토 단계의 데이터 사용 퍼센트 설정 : 사용자 입력값
-final_step_predict_percent = 50
+final_step_predict_percent = 70
 
 # 추가 계측 구간 퍼센트 설정 : 사용자 입력값
 additional_predict_percent = 100
-
-# 성토고 구분 버퍼값 : 사용자 입력값
-step_date_buffer = 35
-
-# 안정된 분석을 위해서는 충분히 많은 데이터가 필요함
-# 성토 단계가 너무 짧을 경우, 데이터 개수가 충분치 않아 해석이 힘듦
-# Buffer 설정: 최소 30일 이상의 방치 기간 필요 설정
 
 
 
@@ -99,7 +92,6 @@ final_index = time.size
 # =================
 # 성토 단계 구분
 # =================
-# TODO: 개선 필요 --> 각 성토 단계의 Index가 꼭 연결될 필요는 없음
 
 # 성토 단계 시작 index 리스트 초기화
 step_start_index = [0]
@@ -119,25 +111,48 @@ for index in range(len(surcharge)):
     # 만일 성토고의 변화가 있을 경우,
     if surcharge[index] != current_surcharge:
 
-        # 현재 시간과 성토로를 설정
-        current_date = time[index]
+        step_end_index.append(index)
+        step_start_index.append(index)
         current_surcharge = surcharge[index]
 
-        # 시간 SPAN이 30일 이상일 경우,
-        if current_date - step_start_date > step_date_buffer:
-
-            # Index를 추가
-            step_end_index.append(index)
-            step_start_index.append(index)
-
-            # 단계 시작일 업데이트
-            step_start_date = current_date
 
 # 마지막 성토 단계 끝 index 추가
 step_end_index.append(len(surcharge) - 1)
 
+
+
+# =================
+# 성토 단계 조정
+# =================
+# 다음 경우를 제외하고 해석을 수행할 필요가 있음
+# 성토고 유지 기간이 매우 짧을 경우
+# 성토고 유지 기간 중 계측 데이터 수가 작을 경우
+
+#
+step_start_index_adjust = []
+step_end_index_adjust = []
+
+for i in range(0, len(step_start_index)):
+
+    # 현 단계 성토 시작일 / 끝일 파악
+    step_start_date = time[step_start_index[i]]
+    step_end_date = time[step_end_index[i]]
+
+    # 현 성토고 유지 일수 및 데이터 개수 파악
+    step_span = step_end_date - step_start_date
+    step_data_num = step_end_index[i] - step_start_index[i] + 1
+
+    if (step_span > 30 and step_data_num > 15):
+        step_start_index_adjust.append((step_start_index[i]))
+        step_end_index_adjust.append((step_end_index[i]))
+
+step_start_index = step_start_index_adjust
+step_end_index = step_end_index_adjust
+
+
 # 성토 단계 횟수 파악 및 저장
 num_steps = len(step_start_index)
+
 
 
 
