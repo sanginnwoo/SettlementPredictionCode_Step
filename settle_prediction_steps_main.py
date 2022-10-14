@@ -54,13 +54,19 @@ def run_settle_prediction(input_file, output_dir,
     # 파일 읽기, 데이터 설정
     # ====================
 
+    # 현재 파일 이름 출력
+    print("Working on " + input_file)
+
     # CSV 파일 읽기
-    data = pd.read_csv(input_file)
+    data = pd.read_csv(input_file,  encoding='euc-kr')
 
     # 시간, 침하량, 성토고 배열 생성
     time = data['Time'].to_numpy()
-    settle = data['Settle'].to_numpy()
+    settle = data['Settlement'].to_numpy()
     surcharge = data['Surcharge'].to_numpy()
+
+    # 데이터 닫기
+
 
     # 마지막 계측 데이터 index + 1 파악
     final_index = time.size
@@ -120,7 +126,7 @@ def run_settle_prediction(input_file, output_dir,
         step_span = step_end_date - step_start_date
         step_data_num = step_end_index[i] - step_start_index[i] + 1
 
-        if (step_span > 30 and step_data_num > 15):
+        if (step_span > 50 and step_data_num > 15):
             step_start_index_adjust.append((step_start_index[i]))
             step_end_index_adjust.append((step_end_index[i]))
 
@@ -472,7 +478,7 @@ def run_settle_prediction(input_file, output_dir,
     plt.title(filename + ": up to %i%% data used in the final step" % final_step_predict_percent)
 
     # 그래프 저장 (SVG 및 PNG)
-    plt.savefig(output_dir + '/' + filename +' %i percent (SVG).svg' %final_step_predict_percent, bbox_inches='tight')
+    #plt.savefig(output_dir + '/' + filename +' %i percent (SVG).svg' %final_step_predict_percent, bbox_inches='tight')
     plt.savefig(output_dir + '/' + filename +' %i percent (PNG).png' %final_step_predict_percent, bbox_inches='tight')
 
     # 그래프 출력
@@ -490,3 +496,5 @@ def run_settle_prediction(input_file, output_dir,
     return [RMSE_hyper_original, RMSE_hyper_nonlinear, RMSE_step,
             final_error_hyper_original, final_error_hyper_nonlinear,
             final_error_step]
+
+run_settle_prediction('data/1_S-8.csv', 'output', 80, 100, False, False)

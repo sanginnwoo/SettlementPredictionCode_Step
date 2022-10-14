@@ -21,11 +21,9 @@ for (root, directories, files) in os.walk(input_dir):
 
 for input_file in input_files:
     for i in range(20, 100, 20):
-        ERROR = settle_prediction_steps.run_settle_prediction(input_file,
+        ERROR = settle_prediction_steps_main.run_settle_prediction(input_file,
                                                               output_dir, i, 100, False, False)
-
         df.loc[len(df.index)] = [input_file, i, ERROR[0], ERROR[1], ERROR[2],
                                  ERROR[3], ERROR[4], ERROR[5]]
-
 
 df.to_csv('Error.csv')
