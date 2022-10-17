@@ -10,8 +10,6 @@ The methodologies used are 1) superposition of time-settlement curves
 and 2) nonlinear regression for hyperbolic curves.
 """
 
-
-
 # =================
 # Import 섹션
 # =================
@@ -23,7 +21,6 @@ import matplotlib.pyplot as plt
 from scipy.optimize import least_squares
 
 
-
 # =================
 # Function 섹션
 # =================
@@ -32,13 +29,16 @@ from scipy.optimize import least_squares
 def generate_data_hyper(px, pt):
     return pt / (px[0] * pt + px[1])
 
+
 # 회귀식과 측정치와의 잔차 반환 (비선형 쌍곡선)
 def fun_hyper_nonlinear(px, pt, py):
     return pt / (px[0] * pt + px[1]) - py
 
+
 # 회귀식과 측정치와의 잔차 반환 (기존 쌍곡선)
 def fun_hyper_original(px, pt, py):
     return px[0] * pt + px[1] - pt / py
+
 
 # RMSE 산정
 def fun_rmse(py1, py2):
@@ -48,8 +48,11 @@ def fun_rmse(py1, py2):
 
 def run_settle_prediction(input_file, output_dir,
                           final_step_predict_percent, additional_predict_percent,
-                          plot_show, print_values):
-
+                          plot_show,
+                          print_values,
+                          run_original_hyperbolic='True',
+                          run_nonlinear_hyperbolic='True',
+                          run_step_prediction='True'):
     # ====================
     # 파일 읽기, 데이터 설정
     # ====================
@@ -58,7 +61,7 @@ def run_settle_prediction(input_file, output_dir,
     print("Working on " + input_file)
 
     # CSV 파일 읽기
-    data = pd.read_csv(input_file,  encoding='euc-kr')
+    data = pd.read_csv(input_file, encoding='euc-kr')
 
     # 시간, 침하량, 성토고 배열 생성
     time = data['Time'].to_numpy()
@@ -67,11 +70,8 @@ def run_settle_prediction(input_file, output_dir,
 
     # 데이터 닫기
 
-
     # 마지막 계측 데이터 index + 1 파악
     final_index = time.size
-
-
 
     # =================
     # 성토 단계 구분
@@ -94,28 +94,23 @@ def run_settle_prediction(input_file, output_dir,
 
         # 만일 성토고의 변화가 있을 경우,
         if surcharge[index] != current_surcharge:
-
             step_end_index.append(index)
             step_start_index.append(index)
             current_surcharge = surcharge[index]
 
-
     # 마지막 성토 단계 끝 index 추가
     step_end_index.append(len(surcharge) - 1)
-
-
 
     # =================
     # 성토 단계 조정
     # =================
-    # 다음 경우를 제외하고 해석을 수행할 필요가 있음
-    # 성토고 유지 기간이 매우 짧을 경우
-    # 성토고 유지 기간 중 계측 데이터 수가 작을 경우
+    # 성토고 유지 기간이 매우 짧을 경우, 해석 단계에서 제외
 
-    #
+    # 조정 성토 시작 및 끝 인덱스 리스트 초기화
     step_start_index_adjust = []
     step_end_index_adjust = []
 
+    # 각 성토 단계 별로 분석
     for i in range(0, len(step_start_index)):
 
         # 현 단계 성토 시작일 / 끝일 파악
@@ -126,19 +121,21 @@ def run_settle_prediction(input_file, output_dir,
         step_span = step_end_date - step_start_date
         step_data_num = step_end_index[i] - step_start_index[i] + 1
 
-        if (step_span > 50 and step_data_num > 15):
+        # 성토고 유지일 및 데이터 개수 기준 적용
+        if step_span > 30 and step_data_num > 5:
             step_start_index_adjust.append((step_start_index[i]))
             step_end_index_adjust.append((step_end_index[i]))
 
+    #  성토 시작 및 끝 인덱스 리스트 업데이트
     step_start_index = step_start_index_adjust
     step_end_index = step_end_index_adjust
 
+    # 침하 예측을 수행할 단계 설정 (현재 끝에서 2단계 이용)
+    step_start_index = step_start_index[-2:]
+    step_end_index = step_end_index[-2:]
 
     # 성토 단계 횟수 파악 및 저장
     num_steps = len(step_start_index)
-
-
-
 
     # ===========================
     # 최종 단계 데이터 사용 범위 조정
@@ -165,8 +162,6 @@ def run_settle_prediction(input_file, output_dir,
     final_step_monitor_end_index = step_end_index[num_steps - 1]
     step_end_index[num_steps - 1] = final_step_predict_end_index
 
-
-
     # =================
     # 추가 예측 구간 반영
     # =================
@@ -188,8 +183,6 @@ def run_settle_prediction(input_file, output_dir,
 
     # 마지막 인덱스값 재조정
     final_index = time.size
-
-
 
     # =============================
     # Settlement Prediction (Step)
@@ -234,7 +227,6 @@ def run_settle_prediction(input_file, output_dir,
         # 회귀분석 시행
         res_lsq_hyper_nonlinear \
             = least_squares(fun_hyper_nonlinear, x0,
-                            bounds=((0, 0),(np.inf, np.inf)),
                             args=(tm_this_step, sm_this_step))
 
         # 쌍곡선 계수 저장 및 출력
@@ -249,18 +241,16 @@ def run_settle_prediction(input_file, output_dir,
         sp_step[step_start_index[i]:final_index] = \
             sp_step[step_start_index[i]:final_index] + sp_to_end_update + s0_this_step
 
-
-
     # =========================================================
     # Settlement prediction (nonliner and original hyperbolic)
     # =========================================================
 
     # 성토 마지막 데이터 추출
-    tm_hyper = time[step_start_index[num_steps-1]:step_end_index[num_steps-1]]
-    sm_hyper = settle[step_start_index[num_steps-1]:step_end_index[num_steps-1]]
+    tm_hyper = time[step_start_index[num_steps - 1]:step_end_index[num_steps - 1]]
+    sm_hyper = settle[step_start_index[num_steps - 1]:step_end_index[num_steps - 1]]
 
     # 현재 단계 시작 부터 끝까지 시간 데이터 추출
-    time_hyper = time[step_start_index[num_steps-1]:final_index]
+    time_hyper = time[step_start_index[num_steps - 1]:final_index]
 
     # 초기 시점 및 침하량 산정
     t0_hyper = tm_hyper[0]
@@ -300,8 +290,6 @@ def run_settle_prediction(input_file, output_dir,
     sp_hyper_original = sp_hyper_original + s0_hyper
     time_hyper = time_hyper + t0_hyper
 
-
-
     # ==========
     # 에러 산정
     # ==========
@@ -327,23 +315,20 @@ def run_settle_prediction(input_file, output_dir,
 
     # RMSE 출력 (단계, 비선형 쌍곡선, 기존 쌍곡선)
     if print_values:
-        print("RMSE (Nonlinear Hyper + Step): %0.3f" %RMSE_step)
-        print("RMSE (Nonlinear Hyperbolic): %0.3f" %RMSE_hyper_nonlinear)
-        print("RMSE (Original Hyperbolic): %0.3f" %RMSE_hyper_original)
+        print("RMSE (Nonlinear Hyper + Step): %0.3f" % RMSE_step)
+        print("RMSE (Nonlinear Hyperbolic): %0.3f" % RMSE_hyper_nonlinear)
+        print("RMSE (Original Hyperbolic): %0.3f" % RMSE_hyper_original)
 
     # (최종 계측 침하량 - 예측 침하량) 계산
-
-    final_error_step = settle[-1] - sp_step_rmse[-1]
-    final_error_hyper_nonlinear = settle[-1] - sp_hyper_nonlinear_rmse[-1]
-    final_error_hyper_original = settle[-1] - sp_hyper_original_rmse[-1]
+    final_error_step = np.abs(settle[-1] - sp_step_rmse[-1])
+    final_error_hyper_nonlinear = np.abs(settle[-1] - sp_hyper_nonlinear_rmse[-1])
+    final_error_hyper_original = np.abs(settle[-1] - sp_hyper_original_rmse[-1])
 
     # (최종 계측 침하량 - 예측 침하량) 출력 (단계, 비선형 쌍곡선, 기존 쌍곡선)
     if print_values:
-        print("Error in Final Settlement (Nonlinear Hyper + Step): %0.3f" %final_error_step)
-        print("Error in Final Settlement (Nonlinear Hyperbolic): %0.3f" %final_error_hyper_nonlinear)
-        print("Error in Final Settlement (Original Hyperbolic): %0.3f" %final_error_hyper_original)
-
-
+        print("Error in Final Settlement (Nonlinear Hyper + Step): %0.3f" % final_error_step)
+        print("Error in Final Settlement (Nonlinear Hyperbolic): %0.3f" % final_error_hyper_nonlinear)
+        print("Error in Final Settlement (Original Hyperbolic): %0.3f" % final_error_hyper_original)
 
     # =====================
     # Post-Processing
@@ -351,7 +336,7 @@ def run_settle_prediction(input_file, output_dir,
 
     # 그래프 크기, 서브 그래프 개수 및 비율 설정
     fig, axes = plt.subplots(2, 1, figsize=(12, 9),
-                             gridspec_kw={'height_ratios':[1,3]})
+                             gridspec_kw={'height_ratios': [1, 3]})
 
     # 성토고 그래프 표시
     axes[0].plot(time, surcharge, color='black', label='surcharge height')
@@ -364,7 +349,8 @@ def run_settle_prediction(input_file, output_dir,
 
     # 계측 및 예측 침하량 표시
     axes[1].scatter(time[0:settle.size], -settle, s=50, facecolors='white', edgecolors='black', label='measured data')
-    axes[1].plot(time[step_start_index[0]:], -sp_step[step_start_index[0]:], linestyle='-', color='blue', label='Nonlinear + Step Loading')
+    axes[1].plot(time[step_start_index[0]:], -sp_step[step_start_index[0]:], linestyle='-', color='blue',
+                 label='Nonlinear + Step Loading')
     axes[1].plot(time_hyper, -sp_hyper_nonlinear,
                  linestyle='--', color='green', label='Nonlinear Hyperbolic')
     axes[1].plot(time_hyper, -sp_hyper_original,
@@ -478,8 +464,8 @@ def run_settle_prediction(input_file, output_dir,
     plt.title(filename + ": up to %i%% data used in the final step" % final_step_predict_percent)
 
     # 그래프 저장 (SVG 및 PNG)
-    #plt.savefig(output_dir + '/' + filename +' %i percent (SVG).svg' %final_step_predict_percent, bbox_inches='tight')
-    plt.savefig(output_dir + '/' + filename +' %i percent (PNG).png' %final_step_predict_percent, bbox_inches='tight')
+    # plt.savefig(output_dir + '/' + filename +' %i percent (SVG).svg' %final_step_predict_percent, bbox_inches='tight')
+    plt.savefig(output_dir + '/' + filename + ' %i percent (PNG).png' % final_step_predict_percent, bbox_inches='tight')
 
     # 그래프 출력
     if plot_show:
@@ -492,9 +478,16 @@ def run_settle_prediction(input_file, output_dir,
     print("Settlement prediction is done for " + filename +
           " with " + str(final_step_predict_percent) + "% data usage")
 
-    # 산정 에러값 반환
+    # 단계 성토 고려 여부 표시
+    is_multi_step = True
+    if len(step_start_index) == 1:
+        is_multi_step = False
+
+    # 반환
     return [RMSE_hyper_original, RMSE_hyper_nonlinear, RMSE_step,
             final_error_hyper_original, final_error_hyper_nonlinear,
-            final_error_step]
+            final_error_step, is_multi_step]
 
-run_settle_prediction('data/1_S-8.csv', 'output', 80, 100, False, False)
+
+#run_settle_prediction('data_1/1_SP-16.csv', 'output',
+#                      80, 100, True, True)
