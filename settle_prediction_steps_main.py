@@ -335,8 +335,7 @@ def run_settle_prediction(input_file, output_dir,
     # =====================
 
     # 그래프 크기, 서브 그래프 개수 및 비율 설정
-    fig, axes = plt.subplots(2, 1, figsize=(12, 9),
-                             gridspec_kw={'height_ratios': [1, 3]})
+    fig, axes = plt.subplots(2, 1, figsize=(12, 9), gridspec_kw={'height_ratios': [1, 3]})
 
     # 성토고 그래프 표시
     axes[0].plot(time, surcharge, color='black', label='surcharge height')
@@ -348,9 +347,10 @@ def run_settle_prediction(input_file, output_dir,
     axes[0].tick_params(direction='in')
 
     # 계측 및 예측 침하량 표시
-    axes[1].scatter(time[0:settle.size], -settle, s=50, facecolors='white', edgecolors='black', label='measured data')
-    axes[1].plot(time[step_start_index[0]:], -sp_step[step_start_index[0]:], linestyle='-', color='blue',
-                 label='Nonlinear + Step Loading')
+    axes[1].scatter(time[0:settle.size], -settle, s=50,
+                    facecolors='white', edgecolors='black', label='measured data')
+    axes[1].plot(time[step_start_index[0]:], -sp_step[step_start_index[0]:],
+                 linestyle='-', color='blue', label='Nonlinear + Step Loading')
     axes[1].plot(time_hyper, -sp_hyper_nonlinear,
                  linestyle='--', color='green', label='Nonlinear Hyperbolic')
     axes[1].plot(time_hyper, -sp_hyper_original,
