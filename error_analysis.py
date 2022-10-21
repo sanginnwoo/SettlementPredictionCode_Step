@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 '''
 
 # CSV 파일 읽기 (일단, 다단 성토 포함)
-df_overall = pd.read_csv('Error_overall.csv', encoding='euc-kr')
+df_overall = pd.read_csv('error_overall.csv', encoding='euc-kr')
 
 # 통계량 저장소 statistics 초기화
 statistic =[]
@@ -22,6 +22,9 @@ statistic =[]
 # RMSE (NL)
 # FE (O)
 # FE (NL)
+
+# 카운트 초기화
+count = 0
 
 # 최종 성토 단계에서 각 침하 데이터 사용 영역에 대해서 다음을 수행
 for data_usage in range(20, 100, 10):
@@ -82,6 +85,9 @@ for data_usage in range(20, 100, 10):
     # 그래프 저장 (SVG 및 PNG)
     plt.savefig('error_analysis/error_nonstep(%i percent).png' % data_usage,
                 bbox_inches='tight')
+
+    # 카운트 증가
+    count = count + 1
 
 # 데이터 사용 영역 설정
 data_usages = range(20, 100, 10)
@@ -163,6 +169,9 @@ statistic_step =[]
 # FE (NL)
 # FE (S)
 
+# 카운트 초기화
+count = 0
+
 # 최종 성토 단계에서 각 침하 데이터 사용 영역에 대해서 다음을 수행
 for data_usage in range(20, 100, 10):
 
@@ -238,6 +247,9 @@ for data_usage in range(20, 100, 10):
     # 그래프 저장 (SVG 및 PNG)
     plt.savefig('error_analysis/error_step(%i percent).png' % data_usage,
                 bbox_inches='tight')
+
+    # 카운트 증가
+    count = count + 1
 
 # 데이터 사용 영역 배열 설정
 data_usages = range(20, 100, 10)

@@ -309,15 +309,15 @@ def run_settle_prediction(input_file, output_dir,
                                                final_step_monitor_end_index - final_step_predict_end_index]
 
     # RMSE 산정  (단계, 비선형 쌍곡선, 기존 쌍곡선)
-    RMSE_step = fun_rmse(sm_rmse, sp_step_rmse)
-    RMSE_hyper_nonlinear = fun_rmse(sm_rmse, sp_hyper_nonlinear_rmse)
-    RMSE_hyper_original = fun_rmse(sm_rmse, sp_hyper_original_rmse)
+    rmse_step = fun_rmse(sm_rmse, sp_step_rmse)
+    rmse_hyper_nonlinear = fun_rmse(sm_rmse, sp_hyper_nonlinear_rmse)
+    rmse_hyper_original = fun_rmse(sm_rmse, sp_hyper_original_rmse)
 
     # RMSE 출력 (단계, 비선형 쌍곡선, 기존 쌍곡선)
     if print_values:
-        print("RMSE (Nonlinear Hyper + Step): %0.3f" % RMSE_step)
-        print("RMSE (Nonlinear Hyperbolic): %0.3f" % RMSE_hyper_nonlinear)
-        print("RMSE (Original Hyperbolic): %0.3f" % RMSE_hyper_original)
+        print("RMSE (Nonlinear Hyper + Step): %0.3f" % rmse_step)
+        print("RMSE (Nonlinear Hyperbolic): %0.3f" % rmse_hyper_nonlinear)
+        print("RMSE (Original Hyperbolic): %0.3f" % rmse_hyper_original)
 
     # (최종 계측 침하량 - 예측 침하량) 계산
     final_error_step = np.abs(settle[-1] - sp_step_rmse[-1])
@@ -442,9 +442,9 @@ def run_settle_prediction(input_file, output_dir,
     mybox = {'facecolor': 'white', 'edgecolor': 'black', 'boxstyle': 'round', 'alpha': 0.2}
     plt.text(max(time), 0.25 * min(-settle),
              "Root Mean Squared Error"
-             + "\n" + "Nonlinear + Step Loading: %0.3f" % RMSE_step
-             + "\n" + "Nonlinear Hyperbolic: %0.3f" % RMSE_hyper_nonlinear
-             + "\n" + "Original Hyperbolic: %0.3f" % RMSE_hyper_original,
+             + "\n" + "Nonlinear + Step Loading: %0.3f" % rmse_step
+             + "\n" + "Nonlinear Hyperbolic: %0.3f" % rmse_hyper_nonlinear
+             + "\n" + "Original Hyperbolic: %0.3f" % rmse_hyper_original,
              color='r', horizontalalignment='right',
              verticalalignment='top', fontsize='12', bbox=mybox)
 
@@ -484,7 +484,7 @@ def run_settle_prediction(input_file, output_dir,
         is_multi_step = False
 
     # 반환
-    return [RMSE_hyper_original, RMSE_hyper_nonlinear, RMSE_step,
+    return [rmse_hyper_original, rmse_hyper_nonlinear, rmse_step,
             final_error_hyper_original, final_error_hyper_nonlinear,
             final_error_step, is_multi_step]
 
