@@ -155,7 +155,7 @@ plt.savefig('error_analysis/error_overall.png', bbox_inches='tight')
 '''
 
 # CSV 파일 읽기 (다단 성토만)
-df_multi_step = pd.read_csv('Error_multi_step.csv', encoding='euc-kr')
+df_multi_step = pd.read_csv('error_multi_step.csv', encoding='euc-kr')
 
 # 통계량 저장소 statistics 초기화
 statistic_step =[]

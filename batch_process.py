@@ -49,5 +49,5 @@ for input_file in input_files:
                                                            return_values[4], return_values[5]]
 
 # 에러 파일을 출력
-df_overall.to_csv(output_error + '/error_overall.csv')
-df_multi_step.to_csv(output_error + 'error_multi_step.csv')
+df_overall.to_csv('error_overall.csv')
+df_multi_step.to_csv('error_multi_step.csv')
