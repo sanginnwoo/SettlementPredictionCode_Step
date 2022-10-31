@@ -14,33 +14,13 @@ from scipy.interpolate import interp1d
 # Function 섹션
 # =================
 
-# 주어진 계수를 이용하여 쌍곡선 시간-침하 곡선 반환
-def generate_data_hyper(px, pt):
-    return pt / (px[0] * pt + px[1])
-
-
-# 회귀식과 측정치와의 잔차 반환 (비선형 쌍곡선)
-def fun_hyper_nonlinear(px, pt, py):
-    return pt / (px[0] * pt + px[1]) - py
-
-
-# 회귀식과 측정치와의 잔차 반환 (기존 쌍곡선)
-def fun_hyper_original(px, pt, py):
-    return px[0] * pt + px[1] - pt / py
-
-
-# RMSE 산정
-def fun_rmse(py1, py2):
-    mse = np.square(np.subtract(py1, py2)).mean()
-    return np.sqrt(mse)
-
+# 주어진 계수를 이용하여 아사오카법 기반 시간-침하 곡선 반환
 def generate_data_asaoka(px, pt, dt):
     return (px[1] / (1 - px[0])) * (1 - (px[0] ** (pt / dt)))
 
-
+# 아사오카법 목표 함수
 def fun_asaoka(px, ps_b, ps_a):
     return px[0] * ps_b + px[1] - ps_a
-
 
 
 # ====================
@@ -174,9 +154,9 @@ surcharge = np.append(surcharge, surcharge_add)
 # 마지막 인덱스값 재조정
 final_index = time.size
 
-# =========================================================
-# Settlement prediction (nonliner and original hyperbolic)
-# =========================================================
+# ===============================
+# Settlement prediction (Asaoka)
+# ===============================
 
 # 성토 마지막 데이터 추출
 tm_asaoka = time[step_start_index[num_steps - 1]:step_end_index[num_steps - 1]]
@@ -192,7 +172,7 @@ tm_asaoka = tm_asaoka - t0_asaoka
 # 초기 침하량에 대한 침하량 조정
 sm_asaoka = sm_asaoka - s0_asaoka
 
-# 인터폴레이션 함수 설정
+# Interpolation 함수 설정
 inter_fn = interp1d(tm_asaoka, sm_asaoka, kind='cubic')
 
 # 데이터 구축 간격 설정
