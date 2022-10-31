@@ -11,6 +11,9 @@ output_dir = 'output'
 # 에러 분석 결과 파일을 저장할 폴더명 지정: 사용자 직접 지정 필요
 output_error = 'error'
 
+# 침하 계측값의 단위 지정: 응동 m, 서컨 cm
+settle_unit = 'cm'
+
 # 입력 파일의 이름을 저장할 리스트 초기화
 input_files = []
 
@@ -36,7 +39,15 @@ for input_file in input_files:
 
         # 침하 예측을 수행하고 반환값 저장
         return_values = settle_prediction_steps_main.\
-            run_settle_prediction(input_file, output_dir, i, 100, False, False)
+            run_settle_prediction(input_file=input_file, output_dir=output_dir,
+                                  final_step_predict_percent=i,
+                                  additional_predict_percent=100,
+                                  plot_show=False,
+                                  print_values=False,
+                                  run_original_hyperbolic=True,
+                                  run_nonlinear_hyperbolic=True,
+                                  run_step_prediction=True,
+                                  settle_unit=settle_unit)
 
         # 데이터프레임에 일단 및 다단 성토를 포함한 예측의 에러를 저장
         df_overall.loc[len(df_overall.index)] = [input_file, i, return_values[0], return_values[1],

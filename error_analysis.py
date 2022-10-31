@@ -83,7 +83,7 @@ for data_usage in range(20, 100, 10):
         ax.set_ylim(0, 0.5)
 
     # 그래프 저장 (SVG 및 PNG)
-    plt.savefig('error_analysis/error_nonstep(%i percent).png' % data_usage,
+    plt.savefig('error/error_nonstep(%i percent).png' % data_usage,
                 bbox_inches='tight')
 
     # 카운트 증가
@@ -144,7 +144,7 @@ for ax in axes:
     ax.set_ylim(0, 50)
 
 # 그래프 저장 (SVG 및 PNG)
-plt.savefig('error_analysis/error_overall.png', bbox_inches='tight')
+plt.savefig('error/error_overall.png', bbox_inches='tight')
 
 
 '''
@@ -245,7 +245,7 @@ for data_usage in range(20, 100, 10):
         ax.set_ylim(0, 0.5)
 
     # 그래프 저장 (SVG 및 PNG)
-    plt.savefig('error_analysis/error_step(%i percent).png' % data_usage,
+    plt.savefig('error/error_step(%i percent).png' % data_usage,
                 bbox_inches='tight')
 
     # 카운트 증가
@@ -312,4 +312,4 @@ for ax in axes:
     ax.set_ylim(0, 50)
 
 # 그래프 저장 (SVG 및 PNG)
-plt.savefig('error_analysis/error_step.png', bbox_inches='tight')
+plt.savefig('error/error_step.png', bbox_inches='tight')

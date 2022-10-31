@@ -52,7 +52,9 @@ def run_settle_prediction(input_file, output_dir,
                           print_values,
                           run_original_hyperbolic='True',
                           run_nonlinear_hyperbolic='True',
-                          run_step_prediction='True'):
+                          run_step_prediction='True',
+                          settle_unit='cm'):
+
     # ====================
     # 파일 읽기, 데이터 설정
     # ====================
@@ -67,6 +69,10 @@ def run_settle_prediction(input_file, output_dir,
     time = data['Time'].to_numpy()
     settle = data['Settlement'].to_numpy()
     surcharge = data['Surcharge'].to_numpy()
+
+    # 만일 침하량의 단위가 m일 경우, 조정
+    if settle_unit == 'm':
+        settle = settle * 100
 
     # 데이터 닫기
 
@@ -184,15 +190,20 @@ def run_settle_prediction(input_file, output_dir,
     # 마지막 인덱스값 재조정
     final_index = time.size
 
-    # =============================
-    # Settlement Prediction (Step)
-    # =============================
+
+
+
+
+
+
+
+
+    # ==========================================
+    # Settlement Prediction (Step + Hyperbolic)
+    # ==========================================
 
     # 예측 침하량 초기화
     sp_step = np.zeros(time.size)
-
-    # 만일 계수 중에 하나가 음수가 나오면 에러 출력
-    error_step = 0
 
     # 각 단계별로 진행
     for i in range(0, num_steps):
@@ -240,6 +251,12 @@ def run_settle_prediction(input_file, output_dir,
         # 예측 침하량 업데이트
         sp_step[step_start_index[i]:final_index] = \
             sp_step[step_start_index[i]:final_index] + sp_to_end_update + s0_this_step
+
+
+
+
+
+
 
     # =========================================================
     # Settlement prediction (nonliner and original hyperbolic)
@@ -289,6 +306,30 @@ def run_settle_prediction(input_file, output_dir,
     sp_hyper_nonlinear = sp_hyper_nonlinear + s0_hyper
     sp_hyper_original = sp_hyper_original + s0_hyper
     time_hyper = time_hyper + t0_hyper
+
+
+
+
+    # ===============================
+    # Settlement prediction (Asaoka)
+    # ===============================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     # ==========
     # 에러 산정
