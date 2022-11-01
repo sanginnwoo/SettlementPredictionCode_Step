@@ -172,27 +172,32 @@ tm_asaoka = tm_asaoka - t0_asaoka
 # 초기 침하량에 대한 침하량 조정
 sm_asaoka = sm_asaoka - s0_asaoka
 
-# Interpolation 함수 설정
+# Interpolation 함수 설정 (3차 보간)
 inter_fn = interp1d(tm_asaoka, sm_asaoka, kind='cubic')
 
-# 데이터 구축 간격 설정
+# 데이터 구축 간격 및 그에 해당하는 데이터 포인트 개수 설정
 interval = 10
 num_data = int(tm_asaoka[-1]/3)
 
-tm_asaoka_new = np.linspace(0, tm_asaoka[-1], num=num_data, endpoint=True)
-sm_asaoka_new = inter_fn(tm_asaoka_new)
+# 등간격 시간 및 침하량 데이터 설정
+tm_asaoka_inter = np.linspace(0, tm_asaoka[-1], num=num_data, endpoint=True)
+sm_asaoka_inter = inter_fn(tm_asaoka_inter)
 
-sm_asaoka_new1 = sm_asaoka_new[0:-2]
-sm_asaoka_new2 = sm_asaoka_new[1:-1]
+# 이전 이후 등간격 침하량 배열 구축
+sm_asaoka_before = sm_asaoka_inter[0:-2]
+sm_asaoka_after = sm_asaoka_inter[1:-1]
 
+# Least square 변수 초기화
 x0 = np.ones(2)
-res_lsq_asaoka = least_squares(fun_asaoka, x0,
-                                           args=(sm_asaoka_new1, sm_asaoka_new2))
+
+# Least square 분석을 통한 침하 곡선 계수 결정
+res_lsq_asaoka = least_squares(fun_asaoka, x0, args=(sm_asaoka_before, sm_asaoka_after))
 
 # 계측 및 예측 침하량 표시
-plt.scatter(sm_asaoka_new1, sm_asaoka_new2, s=50,
-                facecolors='white', edgecolors='black', label='measured data')
+plt.scatter(sm_asaoka_before, sm_asaoka_after, s=50,
+            facecolors='white', edgecolors='black', label='measured data')
 
+# 그래프 표시
 plt.show()
 
 

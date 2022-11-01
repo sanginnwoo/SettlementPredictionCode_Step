@@ -12,7 +12,7 @@ output_dir = 'output'
 output_error = 'error'
 
 # 침하 계측값의 단위 지정: 응동 m, 서컨 cm
-settle_unit = 'cm'
+settle_unit = 'm'
 
 # 입력 파일의 이름을 저장할 리스트 초기화
 input_files = []

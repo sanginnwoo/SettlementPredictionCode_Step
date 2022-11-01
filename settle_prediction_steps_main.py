@@ -19,6 +19,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.optimize import least_squares
+from scipy.interpolate import interp1d
 
 
 # =================
@@ -29,15 +30,21 @@ from scipy.optimize import least_squares
 def generate_data_hyper(px, pt):
     return pt / (px[0] * pt + px[1])
 
+# 주어진 계수를 이용하여 아사오카 시간-침하 곡선 반환
+def generate_data_asaoka(px, pt, dt):
+    return (px[1] / (1 - px[0])) * (1 - (px[0] ** (pt / dt)))
 
 # 회귀식과 측정치와의 잔차 반환 (비선형 쌍곡선)
 def fun_hyper_nonlinear(px, pt, py):
     return pt / (px[0] * pt + px[1]) - py
 
-
 # 회귀식과 측정치와의 잔차 반환 (기존 쌍곡선)
 def fun_hyper_original(px, pt, py):
     return px[0] * pt + px[1] - pt / py
+
+# 회귀식과 측정치와의 잔차 반환 (아사오카)
+def fun_asaoka(px, ps_b, ps_a):
+    return px[0] * ps_b + px[1] - ps_a
 
 
 # RMSE 산정
@@ -52,7 +59,9 @@ def run_settle_prediction(input_file, output_dir,
                           print_values,
                           run_original_hyperbolic='True',
                           run_nonlinear_hyperbolic='True',
+                          run_asoka = 'True',
                           run_step_prediction='True',
+                          asaoka_interval = 3,
                           settle_unit='cm'):
 
     # ====================
@@ -254,7 +263,83 @@ def run_settle_prediction(input_file, output_dir,
 
 
 
+    # ======================================
+    # Settlement Prediction (Step + Asaoka)
+    # ======================================
 
+    # TODO: Modify this
+
+    # 예측 침하량 초기화
+    sp_step_asaoka = np.zeros(time.size)
+
+    # 각 단계별로 진행
+    for i in range(0, num_steps):
+
+        # 각 단계별 계측 시점과 계측 침하량 배열 생성
+        tm_this_step = time[step_start_index[i]:step_end_index[i]]
+        sm_this_step = settle[step_start_index[i]:step_end_index[i]]
+
+        # 이전 단계 까지 예측 침하량 중 현재 단계에 해당 하는 부분 추출
+        sp_this_step = sp_step[step_start_index[i]:step_end_index[i]]
+
+        # 현재 단계 시작 부터 끝까지 시간 데이터 추출
+        tm_to_end = time[step_start_index[i]:final_index]
+
+        # 기존 예측 침하량에 대한 보정
+        sm_this_step = sm_this_step - sp_this_step
+
+        # 초기 시점 및 침하량 산정
+        t0_this_step = tm_this_step[0]
+        s0_this_step = sm_this_step[0]
+
+        # 초기 시점에 대한 시간 조정
+        tm_this_step = tm_this_step - t0_this_step
+        tm_to_end = tm_to_end - t0_this_step
+
+        # 초기 침하량에 대한 침하량 조정
+        sm_this_step = sm_this_step - s0_this_step
+
+
+
+
+
+
+
+        # 등간격 데이터 생성을 위한 Interpolation 함수 설정
+        inter_fn = interp1d(tm_this_step, sm_this_step, kind='cubic')
+
+        # 데이터 구축 간격 및 그에 해당하는 데이터 포인트 개수 설정
+        num_data = int(tm_this_step[-1] / asaoka_interval)
+
+        # 등간격 시간 및 침하량 데이터 설정
+        tm_this_step_inter = np.linspace(0, tm_this_step[-1], num=num_data, endpoint=True)
+        sm_this_step_inter = inter_fn(tm_this_step_inter)
+
+        # 이전 이후 등간격 침하량 배열 구축
+        sm_this_step_before = sm_this_step_inter[0:-2]
+        sm_this_step_after = sm_this_step_inter[1:-1]
+
+
+
+
+        # Least square 변수 초기화
+        x0 = np.ones(2)
+
+        # Least square 분석을 통한 침하 곡선 계수 결정
+        res_lsq_asaoka = least_squares(fun_asaoka, x0, args=(sm_this_step_before, sm_this_step_after))
+
+        # 기존 쌍곡선 법 계수 저장 및 출력
+        x_step_asaoka = res_lsq_asaoka.x
+        if print_values:
+            print(x_step_asaoka)
+
+        # 현재 단계 예측 침하량 산정 (침하 예측 끝까지)
+        sp_to_end_update = generate_data_asaoka(x_step_asaoka, tm_to_end, asaoka_interval)
+
+
+        # 예측 침하량 업데이트
+        sp_step_asaoka[step_start_index[i]:final_index] = \
+            sp_step_asaoka[step_start_index[i]:final_index] + sp_to_end_update + s0_this_step
 
 
 
@@ -314,8 +399,55 @@ def run_settle_prediction(input_file, output_dir,
     # Settlement prediction (Asaoka)
     # ===============================
 
+    # 성토 마지막 데이터 추출
+    tm_asaoka = time[step_start_index[num_steps - 1]:step_end_index[num_steps - 1]]
+    sm_asaoka = settle[step_start_index[num_steps - 1]:step_end_index[num_steps - 1]]
 
+    # 현재 단계 시작 부터 끝까지 시간 데이터 추출
+    time_asaoka = time[step_start_index[num_steps - 1]:final_index]
 
+    # 초기 시점 및 침하량 산정
+    t0_asaoka = tm_asaoka[0]
+    s0_asaoka = sm_asaoka[0]
+
+    # 초기 시점에 대한 시간 조정
+    tm_asaoka = tm_asaoka - t0_asaoka
+    time_asaoka = time_asaoka - t0_asaoka
+
+    # 초기 침하량에 대한 침하량 조정
+    sm_asaoka = sm_asaoka - s0_asaoka
+
+    # 등간격 데이터 생성을 위한 Interpolation 함수 설정
+    inter_fn = interp1d(tm_asaoka, sm_asaoka, kind='cubic')
+
+    # 데이터 구축 간격 및 그에 해당하는 데이터 포인트 개수 설정
+    num_data = int(tm_asaoka[-1] / asaoka_interval)
+
+    # 등간격 시간 및 침하량 데이터 설정
+    tm_asaoka_inter = np.linspace(0, tm_asaoka[-1], num=num_data, endpoint=True)
+    sm_asaoka_inter = inter_fn(tm_asaoka_inter)
+
+    # 이전 이후 등간격 침하량 배열 구축
+    sm_asaoka_before = sm_asaoka_inter[0:-2]
+    sm_asaoka_after = sm_asaoka_inter[1:-1]
+
+    # Least square 변수 초기화
+    x0 = np.ones(2)
+
+    # Least square 분석을 통한 침하 곡선 계수 결정
+    res_lsq_asaoka = least_squares(fun_asaoka, x0, args=(sm_asaoka_before, sm_asaoka_after))
+
+    # 기존 쌍곡선 법 계수 저장 및 출력
+    x_asaoka = res_lsq_asaoka.x
+    if print_values:
+        print(x_asaoka)
+
+    # 현재 단계 예측 침하량 산정 (침하 예측 끝까지)
+    sp_asaoka = generate_data_asaoka(x_asaoka, time_asaoka, asaoka_interval)
+
+    # 예측 침하량 산정
+    sp_asaoka = sp_asaoka + s0_asaoka
+    time_asaoka = time_asaoka + t0_asaoka
 
 
 
@@ -349,27 +481,36 @@ def run_settle_prediction(input_file, output_dir,
                                                final_step_predict_end_index - step_start_index[num_steps - 1] +
                                                final_step_monitor_end_index - final_step_predict_end_index]
 
+    # RMSE 계산 데이터 구간 설정 (아사오카)
+    sp_asaoka_rmse = sp_asaoka[final_step_predict_end_index - step_start_index[num_steps - 1]:
+                               final_step_predict_end_index - step_start_index[num_steps - 1] +
+                               final_step_monitor_end_index - final_step_predict_end_index]
+
     # RMSE 산정  (단계, 비선형 쌍곡선, 기존 쌍곡선)
     rmse_step = fun_rmse(sm_rmse, sp_step_rmse)
     rmse_hyper_nonlinear = fun_rmse(sm_rmse, sp_hyper_nonlinear_rmse)
     rmse_hyper_original = fun_rmse(sm_rmse, sp_hyper_original_rmse)
+    rmse_asaoka = fun_rmse(sm_rmse, sp_asaoka_rmse)
 
     # RMSE 출력 (단계, 비선형 쌍곡선, 기존 쌍곡선)
     if print_values:
         print("RMSE (Nonlinear Hyper + Step): %0.3f" % rmse_step)
         print("RMSE (Nonlinear Hyperbolic): %0.3f" % rmse_hyper_nonlinear)
         print("RMSE (Original Hyperbolic): %0.3f" % rmse_hyper_original)
+        print("RMSE (Asaoka): %0.3f" % rmse_asaoka)
 
     # (최종 계측 침하량 - 예측 침하량) 계산
     final_error_step = np.abs(settle[-1] - sp_step_rmse[-1])
     final_error_hyper_nonlinear = np.abs(settle[-1] - sp_hyper_nonlinear_rmse[-1])
     final_error_hyper_original = np.abs(settle[-1] - sp_hyper_original_rmse[-1])
+    final_error_asaoka = np.abs(settle[-1] - sp_asaoka_rmse[-1])
 
     # (최종 계측 침하량 - 예측 침하량) 출력 (단계, 비선형 쌍곡선, 기존 쌍곡선)
     if print_values:
         print("Error in Final Settlement (Nonlinear Hyper + Step): %0.3f" % final_error_step)
         print("Error in Final Settlement (Nonlinear Hyperbolic): %0.3f" % final_error_hyper_nonlinear)
         print("Error in Final Settlement (Original Hyperbolic): %0.3f" % final_error_hyper_original)
+        print("Error in Final Settlement (Asaoka): %0.3f" % final_error_asaoka)
 
     # =====================
     # Post-Processing
@@ -392,10 +533,17 @@ def run_settle_prediction(input_file, output_dir,
                     facecolors='white', edgecolors='black', label='measured data')
     axes[1].plot(time[step_start_index[0]:], -sp_step[step_start_index[0]:],
                  linestyle='-', color='blue', label='Nonlinear + Step Loading')
+
+    axes[1].plot(time[step_start_index[0]:], -sp_step_asaoka[step_start_index[0]:],
+                 linestyle='-', color='red', label='Asaoka + Step Loading')
+
     axes[1].plot(time_hyper, -sp_hyper_nonlinear,
                  linestyle='--', color='green', label='Nonlinear Hyperbolic')
     axes[1].plot(time_hyper, -sp_hyper_original,
                  linestyle='--', color='red', label='Original Hyperbolic')
+    axes[1].plot(time_asaoka, -sp_asaoka,
+                 linestyle='--', color='blue', label='Asaoka')
+
 
     # 침하량 그래프 설정
     axes[1].set_xlabel("Time (day)", fontsize=15)
@@ -454,7 +602,7 @@ def run_settle_prediction(input_file, output_dir,
                  horizontalalignment='left', verticalalignment='center')
 
     # 예측 데이터 사용 범위 범례 표시 - 기존 및 비선형 쌍곡선
-    plt.annotate('Data Range Used (Nonlinear and Original Hyperbolic)', xy=(final_step_predict_end_date, arrow1_y_loc),
+    plt.annotate('Data Range Used (Hyperbolic and Asaoka)', xy=(final_step_predict_end_date, arrow1_y_loc),
                  xytext=(final_step_predict_end_date + space, arrow2_y_loc),
                  horizontalalignment='left', verticalalignment='center')
 
@@ -481,20 +629,22 @@ def run_settle_prediction(input_file, output_dir,
 
     # RMSE 출력
     mybox = {'facecolor': 'white', 'edgecolor': 'black', 'boxstyle': 'round', 'alpha': 0.2}
-    plt.text(max(time), 0.25 * min(-settle),
+    plt.text(max(time), 0.35 * min(-settle),
              "Root Mean Squared Error"
              + "\n" + "Nonlinear + Step Loading: %0.3f" % rmse_step
              + "\n" + "Nonlinear Hyperbolic: %0.3f" % rmse_hyper_nonlinear
-             + "\n" + "Original Hyperbolic: %0.3f" % rmse_hyper_original,
+             + "\n" + "Original Hyperbolic: %0.3f" % rmse_hyper_original
+             + "\n" + "Asaoka: %0.3f" % rmse_asaoka,
              color='r', horizontalalignment='right',
              verticalalignment='top', fontsize='12', bbox=mybox)
 
     # (최종 계측 침하량 - 예측값) 출력
-    plt.text(max(time), 0.65 * min(-settle),
+    plt.text(max(time), 0.75 * min(-settle),
              "Error in Final Monitored Settlement"
              + "\n" + "Nonlinear + Step Loading: %0.3f" % final_error_step
              + "\n" + "Nonlinear Hyperbolic: %0.3f" % final_error_hyper_nonlinear
-             + "\n" + "Original Hyperbolic: %0.3f" % final_error_hyper_original,
+             + "\n" + "Original Hyperbolic: %0.3f" % final_error_hyper_original
+             + "\n" + "Asaoka: %0.3f" % final_error_asaoka,
              color='r', horizontalalignment='right',
              verticalalignment='top', fontsize='12', bbox=mybox)
 
