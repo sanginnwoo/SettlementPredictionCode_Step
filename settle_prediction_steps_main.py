@@ -1,13 +1,13 @@
 """
-Title: Soft ground settlement prediction considering the step loading
-Main Developer: Sang Inn Woo, Ph.D. @ Incheon National University
+Title: Soft ground settlement prediction
+Developer:
+Sang Inn Woo, Ph.D. @ Incheon National University
+Kwak Taeyoung, Ph.D. @ KICT
+
 Starting Date: 2022-08-11
 Abstract:
 This main objective of this code is to predict
-time vs. (consolidation) settlement curves of soft clay ground
-under step loading conditions.
-The methodologies used are 1) superposition of time-settlement curves
-and 2) nonlinear regression for hyperbolic curves.
+time vs. (consolidation) settlement curves of soft clay ground.
 """
 
 # =================
@@ -715,7 +715,7 @@ def run_settle_prediction(input_file, output_dir,
             final_error_hyper_original, final_error_hyper_nonlinear, final_error_hyper_weight_nonlinear,
             final_error_asaoka, final_error_step, is_multi_step]
 
-
+'''
 run_settle_prediction(input_file='data/2-5_No.39.csv',
                       output_dir='output',
                       final_step_predict_percent=50,
@@ -729,3 +729,4 @@ run_settle_prediction(input_file='data/2-5_No.39.csv',
                       run_step_prediction=True,
                       asaoka_interval=3,
                       settle_unit='cm')
+'''

@@ -1,3 +1,10 @@
+"""
+Title: Error analysis of the settlement prediction curves
+Developer:
+Sang Inn Woo, Ph.D. @ Incheon National University
+Starting Date: 2022-11-10
+"""
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
