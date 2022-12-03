@@ -38,6 +38,10 @@ def generate_data_asaoka(px, pt, dt):
 def fun_hyper_nonlinear(px, pt, py):
     return pt / (px[0] * pt + px[1]) - py
 
+# 회귀식과 측정치와의 잔차 반환 (가중 비선형 쌍곡선)
+def fun_hyper_weight_nonlinear(px, pt, py, pw):
+    return (pt / (px[0] * pt + px[1]) - py) * pw
+
 # 회귀식과 측정치와의 잔차 반환 (기존 쌍곡선)
 def fun_hyper_original(px, pt, py):
     return px[0] * pt + px[1] - pt / py
@@ -59,7 +63,8 @@ def run_settle_prediction(input_file, output_dir,
                           print_values,
                           run_original_hyperbolic='True',
                           run_nonlinear_hyperbolic='True',
-                          run_asoka = 'True',
+                          run_weighted_nonlinear_hyperbolic='False',
+                          run_asaoka = 'True',
                           run_step_prediction='True',
                           asaoka_interval = 3,
                           settle_unit='cm'):
@@ -263,6 +268,8 @@ def run_settle_prediction(input_file, output_dir,
 
 
 
+
+    '''
     # ======================================
     # Settlement Prediction (Step + Asaoka)
     # ======================================
@@ -341,7 +348,7 @@ def run_settle_prediction(input_file, output_dir,
         sp_step_asaoka[step_start_index[i]:final_index] = \
             sp_step_asaoka[step_start_index[i]:final_index] + sp_to_end_update + s0_this_step
 
-
+    '''
 
     # =========================================================
     # Settlement prediction (nonliner and original hyperbolic)
@@ -374,6 +381,18 @@ def run_settle_prediction(input_file, output_dir,
     if print_values:
         print(x_hyper_nonlinear)
 
+    # 가중 비선형 쌍곡선 가중치 산정
+    weight = tm_hyper / np.sum(tm_hyper)
+
+    # 회귀분석 시행 (가중 비선형 쌍곡선)
+    x0 = np.ones(2)
+    res_lsq_hyper_weight_nonlinear = least_squares(fun_hyper_weight_nonlinear, x0,
+                                            args=(tm_hyper, sm_hyper, weight))
+    # 비선형 쌍곡선 법 계수 저장 및 출력
+    x_hyper_weight_nonlinear = res_lsq_hyper_weight_nonlinear.x
+    if print_values:
+        print(x_hyper_weight_nonlinear)
+
     # 회귀분석 시행 (기존 쌍곡선법) - (0, 0)에 해당하는 초기 데이터를 제외하고 회귀분석 실시
     x0 = np.ones(2)
     res_lsq_hyper_original = least_squares(fun_hyper_original, x0,
@@ -385,12 +404,17 @@ def run_settle_prediction(input_file, output_dir,
 
     # 현재 단계 예측 침하량 산정 (침하 예측 끝까지)
     sp_hyper_nonlinear = generate_data_hyper(x_hyper_nonlinear, time_hyper)
+    sp_hyper_weight_nonlinear = generate_data_hyper(x_hyper_weight_nonlinear, time_hyper)
     sp_hyper_original = generate_data_hyper(x_hyper_original, time_hyper)
 
     # 예측 침하량 산정
     sp_hyper_nonlinear = sp_hyper_nonlinear + s0_hyper
+    sp_hyper_weight_nonlinear = sp_hyper_weight_nonlinear + s0_hyper
     sp_hyper_original = sp_hyper_original + s0_hyper
     time_hyper = time_hyper + t0_hyper
+
+
+
 
 
 
@@ -477,6 +501,10 @@ def run_settle_prediction(input_file, output_dir,
     sp_hyper_nonlinear_rmse = sp_hyper_nonlinear[final_step_predict_end_index - step_start_index[num_steps - 1]:
                                                  final_step_predict_end_index - step_start_index[num_steps - 1] +
                                                  final_step_monitor_end_index - final_step_predict_end_index]
+    sp_hyper_weight_nonlinear_rmse \
+                        = sp_hyper_weight_nonlinear[final_step_predict_end_index - step_start_index[num_steps - 1]:
+                                                    final_step_predict_end_index - step_start_index[num_steps - 1] +
+                                                    final_step_monitor_end_index - final_step_predict_end_index]
     sp_hyper_original_rmse = sp_hyper_original[final_step_predict_end_index - step_start_index[num_steps - 1]:
                                                final_step_predict_end_index - step_start_index[num_steps - 1] +
                                                final_step_monitor_end_index - final_step_predict_end_index]
@@ -489,6 +517,7 @@ def run_settle_prediction(input_file, output_dir,
     # RMSE 산정  (단계, 비선형 쌍곡선, 기존 쌍곡선)
     rmse_step = fun_rmse(sm_rmse, sp_step_rmse)
     rmse_hyper_nonlinear = fun_rmse(sm_rmse, sp_hyper_nonlinear_rmse)
+    rmse_hyper_weight_nonlinear = fun_rmse(sm_rmse, sp_hyper_weight_nonlinear_rmse)
     rmse_hyper_original = fun_rmse(sm_rmse, sp_hyper_original_rmse)
     rmse_asaoka = fun_rmse(sm_rmse, sp_asaoka_rmse)
 
@@ -496,12 +525,14 @@ def run_settle_prediction(input_file, output_dir,
     if print_values:
         print("RMSE (Nonlinear Hyper + Step): %0.3f" % rmse_step)
         print("RMSE (Nonlinear Hyperbolic): %0.3f" % rmse_hyper_nonlinear)
+        print("RMSE (Weighted Nonlinear Hyperbolic): %0.3f" % rmse_hyper_weight_nonlinear)
         print("RMSE (Original Hyperbolic): %0.3f" % rmse_hyper_original)
         print("RMSE (Asaoka): %0.3f" % rmse_asaoka)
 
     # (최종 계측 침하량 - 예측 침하량) 계산
     final_error_step = np.abs(settle[-1] - sp_step_rmse[-1])
     final_error_hyper_nonlinear = np.abs(settle[-1] - sp_hyper_nonlinear_rmse[-1])
+    final_error_hyper_weight_nonlinear = np.abs(settle[-1] - sp_hyper_weight_nonlinear_rmse[-1])
     final_error_hyper_original = np.abs(settle[-1] - sp_hyper_original_rmse[-1])
     final_error_asaoka = np.abs(settle[-1] - sp_asaoka_rmse[-1])
 
@@ -509,8 +540,14 @@ def run_settle_prediction(input_file, output_dir,
     if print_values:
         print("Error in Final Settlement (Nonlinear Hyper + Step): %0.3f" % final_error_step)
         print("Error in Final Settlement (Nonlinear Hyperbolic): %0.3f" % final_error_hyper_nonlinear)
+        print("Error in Final Settlement (Weighted Nonlinear Hyperbolic): %0.3f" % final_error_hyper_weight_nonlinear)
         print("Error in Final Settlement (Original Hyperbolic): %0.3f" % final_error_hyper_original)
         print("Error in Final Settlement (Asaoka): %0.3f" % final_error_asaoka)
+
+
+
+
+
 
     # =====================
     # Post-Processing
@@ -531,19 +568,16 @@ def run_settle_prediction(input_file, output_dir,
     # 계측 및 예측 침하량 표시
     axes[1].scatter(time[0:settle.size], -settle, s=50,
                     facecolors='white', edgecolors='black', label='measured data')
-    axes[1].plot(time[step_start_index[0]:], -sp_step[step_start_index[0]:],
-                 linestyle='-', color='blue', label='Nonlinear + Step Loading')
-
-    axes[1].plot(time[step_start_index[0]:], -sp_step_asaoka[step_start_index[0]:],
-                 linestyle='-', color='red', label='Asaoka + Step Loading')
-
-    axes[1].plot(time_hyper, -sp_hyper_nonlinear,
-                 linestyle='--', color='green', label='Nonlinear Hyperbolic')
     axes[1].plot(time_hyper, -sp_hyper_original,
                  linestyle='--', color='red', label='Original Hyperbolic')
+    axes[1].plot(time_hyper, -sp_hyper_nonlinear,
+                 linestyle='--', color='green', label='Nonlinear Hyperbolic')
+    axes[1].plot(time_hyper, -sp_hyper_weight_nonlinear,
+                 linestyle='--', color='blue', label='Nonlinear Hyperbolic (Weighted)')
     axes[1].plot(time_asaoka, -sp_asaoka,
-                 linestyle='--', color='blue', label='Asaoka')
-
+                 linestyle='--', color='orange', label='Asaoka')
+    axes[1].plot(time[step_start_index[0]:], -sp_step[step_start_index[0]:],
+                 linestyle='--', color='navy', label='Nonlinear + Step Loading')
 
     # 침하량 그래프 설정
     axes[1].set_xlabel("Time (day)", fontsize=15)
@@ -555,7 +589,7 @@ def run_settle_prediction(input_file, output_dir,
     axes[1].tick_params(direction='in')
 
     # 범례 표시
-    axes[1].legend(loc=1, ncol=2, frameon=True, fontsize=12)
+    axes[1].legend(loc=1, ncol=3, frameon=True, fontsize=10)
 
     # 예측 데이터 사용 범위 음영 처리 - 단계성토
     plt.axvspan(time[step_start_index[0]], final_step_predict_end_date,
@@ -629,24 +663,26 @@ def run_settle_prediction(input_file, output_dir,
 
     # RMSE 출력
     mybox = {'facecolor': 'white', 'edgecolor': 'black', 'boxstyle': 'round', 'alpha': 0.2}
-    plt.text(max(time), 0.35 * min(-settle),
-             "Root Mean Squared Error"
-             + "\n" + "Nonlinear + Step Loading: %0.3f" % rmse_step
-             + "\n" + "Nonlinear Hyperbolic: %0.3f" % rmse_hyper_nonlinear
+    plt.text(max(time) * 1.04, 0.20 * min(-settle),
+             r"$\bf{Root\ Mean\ Squared\ Error}$"
              + "\n" + "Original Hyperbolic: %0.3f" % rmse_hyper_original
-             + "\n" + "Asaoka: %0.3f" % rmse_asaoka,
+             + "\n" + "Nonlinear Hyperbolic: %0.3f" % rmse_hyper_nonlinear
+             + "\n" + "Nonlinear Hyperbolic (Weighted): %0.3f" % rmse_hyper_weight_nonlinear
+             + "\n" + "Asaoka: %0.3f" % rmse_asaoka
+             + "\n" + "Nonlinear + Step Loading: %0.3f" % rmse_step,
              color='r', horizontalalignment='right',
-             verticalalignment='top', fontsize='12', bbox=mybox)
+             verticalalignment='top', fontsize='10', bbox=mybox)
 
     # (최종 계측 침하량 - 예측값) 출력
-    plt.text(max(time), 0.75 * min(-settle),
-             "Error in Final Monitored Settlement"
-             + "\n" + "Nonlinear + Step Loading: %0.3f" % final_error_step
-             + "\n" + "Nonlinear Hyperbolic: %0.3f" % final_error_hyper_nonlinear
+    plt.text(max(time) * 1.04, 0.55 * min(-settle),
+             r"$\bf{Error\ in\ Final\ Settlement}$"
              + "\n" + "Original Hyperbolic: %0.3f" % final_error_hyper_original
-             + "\n" + "Asaoka: %0.3f" % final_error_asaoka,
+             + "\n" + "Nonlinear Hyperbolic: %0.3f" % final_error_hyper_nonlinear
+             + "\n" + "Nonlinear Hyperbolic (Weighted): %0.3f" % final_error_hyper_weight_nonlinear
+             + "\n" + "Asaoka: %0.3f" % final_error_asaoka
+             + "\n" + "Nonlinear + Step Loading: %0.3f" % final_error_step,
              color='r', horizontalalignment='right',
-             verticalalignment='top', fontsize='12', bbox=mybox)
+             verticalalignment='top', fontsize='10', bbox=mybox)
 
     # 파일 이름만 추출
     filename = os.path.basename(input_file)
@@ -675,10 +711,21 @@ def run_settle_prediction(input_file, output_dir,
         is_multi_step = False
 
     # 반환
-    return [rmse_hyper_original, rmse_hyper_nonlinear, rmse_step,
-            final_error_hyper_original, final_error_hyper_nonlinear,
-            final_error_step, is_multi_step]
+    return [rmse_hyper_original, rmse_hyper_nonlinear, rmse_hyper_weight_nonlinear, rmse_asaoka, rmse_step,
+            final_error_hyper_original, final_error_hyper_nonlinear, final_error_hyper_weight_nonlinear,
+            final_error_asaoka, final_error_step, is_multi_step]
 
 
-#run_settle_prediction('data_1/1_SP-16.csv', 'output',
-#                      80, 100, True, True)
+run_settle_prediction(input_file='data/2-5_No.39.csv',
+                      output_dir='output',
+                      final_step_predict_percent=50,
+                      additional_predict_percent=100,
+                      plot_show=True,
+                      print_values=True,
+                      run_original_hyperbolic=True,
+                      run_nonlinear_hyperbolic=True,
+                      run_weighted_nonlinear_hyperbolic=True,
+                      run_asaoka=True,
+                      run_step_prediction=True,
+                      asaoka_interval=3,
+                      settle_unit='cm')
