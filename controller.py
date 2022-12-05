@@ -52,6 +52,49 @@ for row in monitoring_record:
     surcharge.append(float(row[8]))
     time.append(float(row[12]))
 
-print(settlement)
-print(surcharge)
-print(time)
+# convert lists to np arrays
+settlement = np.array(settlement)
+surcharge = np.array(surcharge)
+time = np.array(time)
+
+# run the settlement prediction and get results
+results = settle_prediction_steps_main.run_settle_prediction(point_name=point_name,
+                                                             np_time=time,
+                                                             np_surcharge=surcharge,
+                                                             np_settlement=settlement,
+                                                             final_step_predict_percent=90,
+                                                             additional_predict_percent=300,
+                                                             plot_show=True,
+                                                             print_values=True,
+                                                             run_original_hyperbolic=True,
+                                                             run_nonlinear_hyperbolic=True,
+                                                             run_weighted_nonlinear_hyperbolic=True,
+                                                             run_asaoka=True,
+                                                             run_step_prediction=True,
+                                                             asaoka_interval=3)
+
+# if there are prediction data for the given data point, delete it first
+postgres_delete_query = """DELETE FROM apptb_pred02 WHERE cons_code='""" + point_name + """'"""
+cursor.execute(postgres_delete_query)
+connection.commit()
+
+time = results[0]
+predicted_settlement = results[1]
+
+for i in range(5):
+
+    time = results[2 * i]
+    predicted_settlement = results[2 * i + 1]
+
+    for j in range(len(time)):
+
+        postgres_insert_query \
+            = """INSERT INTO apptb_pred02 (cons_code, prediction_progress_days, predicted_settlement, prediction_method) """\
+              + """VALUES (%s, %s, %s, %s)"""
+
+        record_to_insert = (point_name, time[j], predicted_settlement[j], i)
+        cursor.execute(postgres_insert_query, record_to_insert)
+
+connection.commit()
+
+

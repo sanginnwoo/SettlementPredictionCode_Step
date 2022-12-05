@@ -79,7 +79,8 @@ def run_settle_prediction_from_file(input_file, output_dir,
     settle = data['Settlement'].to_numpy()
     surcharge = data['Surcharge'].to_numpy()
 
-    run_settle_prediction(np_time=time,
+    run_settle_prediction(point_name=input_file,
+                          np_time=time,
                           np_surcharge=surcharge,
                           np_settlement=settle,
                           final_step_predict_percent=final_step_predict_percent,
@@ -93,7 +94,8 @@ def run_settle_prediction_from_file(input_file, output_dir,
                           run_step_prediction=run_step_prediction,
                           asaoka_interval=asaoka_interval)
 
-def run_settle_prediction(np_time, np_surcharge, np_settlement,
+def run_settle_prediction(point_name,
+                          np_time, np_surcharge, np_settlement,
                           final_step_predict_percent, additional_predict_percent,
                           plot_show,
                           print_values,
@@ -510,9 +512,9 @@ def run_settle_prediction(np_time, np_surcharge, np_settlement,
 
 
 
-    # ==========
-    # 에러 산정
-    # ==========
+    # ==============================
+    # Post-Processing #1 : 에러 산정
+    # ==============================
 
     # RMSE 계산 데이터 구간 설정 (계측)
     sm_rmse = settle[final_step_predict_end_index:final_step_monitor_end_index]
@@ -572,9 +574,9 @@ def run_settle_prediction(np_time, np_surcharge, np_settlement,
 
 
 
-    # =====================
-    # Post-Processing
-    # =====================
+    # ==========================================
+    # Post-Processing #2 : 그래프 작성
+    # ==========================================
 
     # 그래프 크기, 서브 그래프 개수 및 비율 설정
     fig, axes = plt.subplots(2, 1, figsize=(12, 9), gridspec_kw={'height_ratios': [1, 3]})
@@ -708,14 +710,14 @@ def run_settle_prediction(np_time, np_surcharge, np_settlement,
              verticalalignment='top', fontsize='10', bbox=mybox)
 
     # 파일 이름만 추출
-    filename = os.path.basename(input_file)
+    filename = os.path.basename(point_name)
 
     # 그래프 제목 표시
     plt.title(filename + ": up to %i%% data used in the final step" % final_step_predict_percent)
 
     # 그래프 저장 (SVG 및 PNG)
     # plt.savefig(output_dir + '/' + filename +' %i percent (SVG).svg' %final_step_predict_percent, bbox_inches='tight')
-    plt.savefig(output_dir + '/' + filename + ' %i percent (PNG).png' % final_step_predict_percent, bbox_inches='tight')
+    #plt.savefig(output_dir + '/' + filename + ' %i percent (PNG).png' % final_step_predict_percent, bbox_inches='tight')
 
     # 그래프 출력
     if plot_show:
@@ -734,7 +736,25 @@ def run_settle_prediction(np_time, np_surcharge, np_settlement,
         is_multi_step = False
 
     # 반환
-    return [rmse_hyper_original, rmse_hyper_nonlinear, rmse_hyper_weight_nonlinear, rmse_asaoka, rmse_step,
+
+    axes[1].plot(time_hyper, -sp_hyper_original,
+                 linestyle='--', color='red', label='Original Hyperbolic')
+    axes[1].plot(time_hyper, -sp_hyper_nonlinear,
+                 linestyle='--', color='green', label='Nonlinear Hyperbolic')
+    axes[1].plot(time_hyper, -sp_hyper_weight_nonlinear,
+                 linestyle='--', color='blue', label='Nonlinear Hyperbolic (Weighted)')
+    axes[1].plot(time_asaoka, -sp_asaoka,
+                 linestyle='--', color='orange', label='Asaoka')
+    axes[1].plot(time[step_start_index[0]:], -sp_step[step_start_index[0]:],
+                 linestyle='--', color='navy', label='Nonlinear + Step Loading')
+
+    return [time_hyper, sp_hyper_original,
+            time_hyper, sp_hyper_nonlinear,
+            time_hyper, sp_hyper_weight_nonlinear,
+            time_asaoka, sp_asaoka,
+            time[step_start_index[0]:], -sp_step[step_start_index[0]:],
+            rmse_hyper_original, rmse_hyper_nonlinear, rmse_hyper_weight_nonlinear,
+            rmse_asaoka, rmse_step,
             final_error_hyper_original, final_error_hyper_nonlinear, final_error_hyper_weight_nonlinear,
             final_error_asaoka, final_error_step, is_multi_step]
 
