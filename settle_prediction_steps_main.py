@@ -57,21 +57,16 @@ def fun_rmse(py1, py2):
     return np.sqrt(mse)
 
 
-def run_settle_prediction(input_file, output_dir,
-                          final_step_predict_percent, additional_predict_percent,
-                          plot_show,
-                          print_values,
-                          run_original_hyperbolic='True',
-                          run_nonlinear_hyperbolic='True',
-                          run_weighted_nonlinear_hyperbolic='False',
-                          run_asaoka = 'True',
-                          run_step_prediction='True',
-                          asaoka_interval = 3,
-                          settle_unit='cm'):
-
-    # ====================
-    # 파일 읽기, 데이터 설정
-    # ====================
+def run_settle_prediction_from_file(input_file, output_dir,
+                                    final_step_predict_percent, additional_predict_percent,
+                                    plot_show,
+                                    print_values,
+                                    run_original_hyperbolic='True',
+                                    run_nonlinear_hyperbolic='True',
+                                    run_weighted_nonlinear_hyperbolic='False',
+                                    run_asaoka='True',
+                                    run_step_prediction='True',
+                                    asaoka_interval=3):
 
     # 현재 파일 이름 출력
     print("Working on " + input_file)
@@ -84,11 +79,39 @@ def run_settle_prediction(input_file, output_dir,
     settle = data['Settlement'].to_numpy()
     surcharge = data['Surcharge'].to_numpy()
 
-    # 만일 침하량의 단위가 m일 경우, 조정
-    if settle_unit == 'm':
-        settle = settle * 100
+    run_settle_prediction(np_time=time,
+                          np_surcharge=surcharge,
+                          np_settlement=settle,
+                          final_step_predict_percent=final_step_predict_percent,
+                          additional_predict_percent=additional_predict_percent,
+                          plot_show=plot_show,
+                          print_values=print_values,
+                          run_original_hyperbolic=run_original_hyperbolic,
+                          run_nonlinear_hyperbolic=run_nonlinear_hyperbolic,
+                          run_weighted_nonlinear_hyperbolic='False',
+                          run_asaoka=run_asaoka,
+                          run_step_prediction=run_step_prediction,
+                          asaoka_interval=asaoka_interval)
 
-    # 데이터 닫기
+def run_settle_prediction(np_time, np_surcharge, np_settlement,
+                          final_step_predict_percent, additional_predict_percent,
+                          plot_show,
+                          print_values,
+                          run_original_hyperbolic='True',
+                          run_nonlinear_hyperbolic='True',
+                          run_weighted_nonlinear_hyperbolic='False',
+                          run_asaoka = 'True',
+                          run_step_prediction='True',
+                          asaoka_interval = 3):
+
+    # ====================
+    # 파일 읽기, 데이터 설정
+    # ====================
+
+    # 시간, 침하량, 성토고 배열 생성
+    time = np_time
+    settle = np_settlement
+    surcharge = np_surcharge
 
     # 마지막 계측 데이터 index + 1 파악
     final_index = time.size
