@@ -570,183 +570,182 @@ def run_settle_prediction(point_name,
         print("Error in Final Settlement (Asaoka): %0.3f" % final_error_asaoka)
 
 
-
-
-
-
     # ==========================================
     # Post-Processing #2 : 그래프 작성
     # ==========================================
 
-    # 그래프 크기, 서브 그래프 개수 및 비율 설정
-    fig, axes = plt.subplots(2, 1, figsize=(12, 9), gridspec_kw={'height_ratios': [1, 3]})
-
-    # 성토고 그래프 표시
-    axes[0].plot(time, surcharge, color='black', label='surcharge height')
-
-    # 성토고 그래프 설정
-    axes[0].set_ylabel("Surcharge height (m)", fontsize=15)
-    axes[0].set_xlim(left=0)
-    axes[0].grid(color="gray", alpha=.5, linestyle='--')
-    axes[0].tick_params(direction='in')
-
-    # 계측 및 예측 침하량 표시
-    axes[1].scatter(time[0:settle.size], -settle, s=50,
-                    facecolors='white', edgecolors='black', label='measured data')
-    axes[1].plot(time_hyper, -sp_hyper_original,
-                 linestyle='--', color='red', label='Original Hyperbolic')
-    axes[1].plot(time_hyper, -sp_hyper_nonlinear,
-                 linestyle='--', color='green', label='Nonlinear Hyperbolic')
-    axes[1].plot(time_hyper, -sp_hyper_weight_nonlinear,
-                 linestyle='--', color='blue', label='Nonlinear Hyperbolic (Weighted)')
-    axes[1].plot(time_asaoka, -sp_asaoka,
-                 linestyle='--', color='orange', label='Asaoka')
-    axes[1].plot(time[step_start_index[0]:], -sp_step[step_start_index[0]:],
-                 linestyle='--', color='navy', label='Nonlinear + Step Loading')
-
-    # 침하량 그래프 설정
-    axes[1].set_xlabel("Time (day)", fontsize=15)
-    axes[1].set_ylabel("Settlement (cm)", fontsize=15)
-    axes[1].set_ylim(top=0)
-    axes[1].set_ylim(bottom=-1.5 * settle.max())
-    axes[1].set_xlim(left=0)
-    axes[1].grid(color="gray", alpha=.5, linestyle='--')
-    axes[1].tick_params(direction='in')
-
-    # 범례 표시
-    axes[1].legend(loc=1, ncol=3, frameon=True, fontsize=10)
-
-    # 예측 데이터 사용 범위 음영 처리 - 단계성토
-    plt.axvspan(time[step_start_index[0]], final_step_predict_end_date,
-                alpha=0.1, color='grey', hatch='//')
-
-    # 예측 데이터 사용 범위 음영 처리 - 기존 및 비선형 쌍곡선
-    plt.axvspan(final_step_start_date, final_step_predict_end_date,
-                alpha=0.1, color='grey', hatch='\\')
-
-    # 예측 데이터 사용 범위 표시 화살표 세로 위치 설정
-    arrow1_y_loc = 1.3 * min(-settle)
-    arrow2_y_loc = 1.4 * min(-settle)
-
-    # 화살표 크기 설정
-    arrow_head_width = 0.03 * max(settle)
-    arrow_head_length = 0.01 * max(time)
-
-    # 예측 데이터 사용 범위 화살표 처리 - 단계성토
-    axes[1].arrow(time[step_start_index[0]], arrow1_y_loc,
-                  final_step_predict_end_date - time[step_start_index[0]], 0,
-                  head_width=arrow_head_width, head_length=arrow_head_length,
-                  color='black', length_includes_head='True')
-    axes[1].arrow(final_step_predict_end_date, arrow1_y_loc,
-                  time[step_start_index[0]] - final_step_predict_end_date, 0,
-                  head_width=arrow_head_width, head_length=arrow_head_length,
-                  color='black', length_includes_head='True')
-
-    # 예측 데이터 사용 범위 화살표 처리 - 기존 및 비선형 쌍곡선
-    axes[1].arrow(final_step_start_date, arrow2_y_loc,
-                  final_step_predict_end_date - final_step_start_date, 0,
-                  head_width=arrow_head_width, head_length=arrow_head_length,
-                  color='black', length_includes_head='True')
-    axes[1].arrow(final_step_predict_end_date, arrow2_y_loc,
-                  final_step_start_date - final_step_predict_end_date, 0,
-                  head_width=arrow_head_width, head_length=arrow_head_length,
-                  color='black', length_includes_head='True')
-
-    # Annotation 표시용 공간 설정
-    space = max(time) * 0.01
-
-    # 예측 데이터 사용 범위 범례 표시 - 단계성토
-    plt.annotate('Data Range Used (Nonlinear + Step Loading)', xy=(final_step_predict_end_date, arrow1_y_loc),
-                 xytext=(final_step_predict_end_date + space, arrow1_y_loc),
-                 horizontalalignment='left', verticalalignment='center')
-
-    # 예측 데이터 사용 범위 범례 표시 - 기존 및 비선형 쌍곡선
-    plt.annotate('Data Range Used (Hyperbolic and Asaoka)', xy=(final_step_predict_end_date, arrow1_y_loc),
-                 xytext=(final_step_predict_end_date + space, arrow2_y_loc),
-                 horizontalalignment='left', verticalalignment='center')
-
-    # RMSE 산정 범위 표시 화살표 세로 위치 설정
-    arrow3_y_loc = 0.55 * min(-settle)
-
-    # RMSE 산정 범위 화살표 표시
-    axes[1].arrow(final_step_predict_end_date, arrow3_y_loc,
-                  final_step_end_date - final_step_predict_end_date, 0,
-                  head_width=arrow_head_width, head_length=arrow_head_length,
-                  color='black', length_includes_head='True')
-    axes[1].arrow(final_step_end_date, arrow3_y_loc,
-                  final_step_predict_end_date - final_step_end_date, 0,
-                  head_width=arrow_head_width, head_length=arrow_head_length,
-                  color='black', length_includes_head='True')
-
-    # RMSE 산정 범위 세로선 설정
-    axes[1].axvline(x=final_step_end_date, color='silver', linestyle=':')
-
-    # RMSE 산정 범위 범례 표시
-    plt.annotate('RMSE Estimation Section', xy=(final_step_end_date, arrow3_y_loc),
-                 xytext=(final_step_end_date + space, arrow3_y_loc),
-                 horizontalalignment='left', verticalalignment='center')
-
-    # RMSE 출력
-    mybox = {'facecolor': 'white', 'edgecolor': 'black', 'boxstyle': 'round', 'alpha': 0.2}
-    plt.text(max(time) * 1.04, 0.20 * min(-settle),
-             r"$\bf{Root\ Mean\ Squared\ Error}$"
-             + "\n" + "Original Hyperbolic: %0.3f" % rmse_hyper_original
-             + "\n" + "Nonlinear Hyperbolic: %0.3f" % rmse_hyper_nonlinear
-             + "\n" + "Nonlinear Hyperbolic (Weighted): %0.3f" % rmse_hyper_weight_nonlinear
-             + "\n" + "Asaoka: %0.3f" % rmse_asaoka
-             + "\n" + "Nonlinear + Step Loading: %0.3f" % rmse_step,
-             color='r', horizontalalignment='right',
-             verticalalignment='top', fontsize='10', bbox=mybox)
-
-    # (최종 계측 침하량 - 예측값) 출력
-    plt.text(max(time) * 1.04, 0.55 * min(-settle),
-             r"$\bf{Error\ in\ Final\ Settlement}$"
-             + "\n" + "Original Hyperbolic: %0.3f" % final_error_hyper_original
-             + "\n" + "Nonlinear Hyperbolic: %0.3f" % final_error_hyper_nonlinear
-             + "\n" + "Nonlinear Hyperbolic (Weighted): %0.3f" % final_error_hyper_weight_nonlinear
-             + "\n" + "Asaoka: %0.3f" % final_error_asaoka
-             + "\n" + "Nonlinear + Step Loading: %0.3f" % final_error_step,
-             color='r', horizontalalignment='right',
-             verticalalignment='top', fontsize='10', bbox=mybox)
-
-    # 파일 이름만 추출
-    filename = os.path.basename(point_name)
-
-    # 그래프 제목 표시
-    plt.title(filename + ": up to %i%% data used in the final step" % final_step_predict_percent)
-
-    # 그래프 저장 (SVG 및 PNG)
-    # plt.savefig(output_dir + '/' + filename +' %i percent (SVG).svg' %final_step_predict_percent, bbox_inches='tight')
-    #plt.savefig(output_dir + '/' + filename + ' %i percent (PNG).png' % final_step_predict_percent, bbox_inches='tight')
-
-    # 그래프 출력
+    # 만약 그래프 도시가 필요할 경우,
     if plot_show:
-        plt.show()
 
-    # 그래프 닫기 (메모리 소모 방지)
-    plt.close()
+        # 그래프 크기, 서브 그래프 개수 및 비율 설정
+        fig, axes = plt.subplots(2, 1, figsize=(12, 9), gridspec_kw={'height_ratios': [1, 3]})
 
-    # 예측 완료 표시
-    print("Settlement prediction is done for " + filename +
-          " with " + str(final_step_predict_percent) + "% data usage")
+        # 성토고 그래프 표시
+        axes[0].plot(time, surcharge, color='black', label='surcharge height')
 
-    # 단계 성토 고려 여부 표시
-    is_multi_step = True
-    if len(step_start_index) == 1:
-        is_multi_step = False
+        # 성토고 그래프 설정
+        axes[0].set_ylabel("Surcharge height (m)", fontsize=15)
+        axes[0].set_xlim(left=0)
+        axes[0].grid(color="gray", alpha=.5, linestyle='--')
+        axes[0].tick_params(direction='in')
 
-    # 반환
+        # 계측 및 예측 침하량 표시
+        axes[1].scatter(time[0:settle.size], -settle, s=50,
+                        facecolors='white', edgecolors='black', label='measured data')
+        axes[1].plot(time_hyper, -sp_hyper_original,
+                     linestyle='--', color='red', label='Original Hyperbolic')
+        axes[1].plot(time_hyper, -sp_hyper_nonlinear,
+                     linestyle='--', color='green', label='Nonlinear Hyperbolic')
+        axes[1].plot(time_hyper, -sp_hyper_weight_nonlinear,
+                     linestyle='--', color='blue', label='Nonlinear Hyperbolic (Weighted)')
+        axes[1].plot(time_asaoka, -sp_asaoka,
+                     linestyle='--', color='orange', label='Asaoka')
+        axes[1].plot(time[step_start_index[0]:], -sp_step[step_start_index[0]:],
+                     linestyle='--', color='navy', label='Nonlinear + Step Loading')
 
-    axes[1].plot(time_hyper, -sp_hyper_original,
-                 linestyle='--', color='red', label='Original Hyperbolic')
-    axes[1].plot(time_hyper, -sp_hyper_nonlinear,
-                 linestyle='--', color='green', label='Nonlinear Hyperbolic')
-    axes[1].plot(time_hyper, -sp_hyper_weight_nonlinear,
-                 linestyle='--', color='blue', label='Nonlinear Hyperbolic (Weighted)')
-    axes[1].plot(time_asaoka, -sp_asaoka,
-                 linestyle='--', color='orange', label='Asaoka')
-    axes[1].plot(time[step_start_index[0]:], -sp_step[step_start_index[0]:],
-                 linestyle='--', color='navy', label='Nonlinear + Step Loading')
+        # 침하량 그래프 설정
+        axes[1].set_xlabel("Time (day)", fontsize=15)
+        axes[1].set_ylabel("Settlement (cm)", fontsize=15)
+        axes[1].set_ylim(top=0)
+        axes[1].set_ylim(bottom=-1.5 * settle.max())
+        axes[1].set_xlim(left=0)
+        axes[1].grid(color="gray", alpha=.5, linestyle='--')
+        axes[1].tick_params(direction='in')
+
+        # 범례 표시
+        axes[1].legend(loc=1, ncol=3, frameon=True, fontsize=10)
+
+        # 예측 데이터 사용 범위 음영 처리 - 단계성토
+        plt.axvspan(time[step_start_index[0]], final_step_predict_end_date,
+                    alpha=0.1, color='grey', hatch='//')
+
+        # 예측 데이터 사용 범위 음영 처리 - 기존 및 비선형 쌍곡선
+        plt.axvspan(final_step_start_date, final_step_predict_end_date,
+                    alpha=0.1, color='grey', hatch='\\')
+
+        # 예측 데이터 사용 범위 표시 화살표 세로 위치 설정
+        arrow1_y_loc = 1.3 * min(-settle)
+        arrow2_y_loc = 1.4 * min(-settle)
+
+        # 화살표 크기 설정
+        arrow_head_width = 0.03 * max(settle)
+        arrow_head_length = 0.01 * max(time)
+
+        # 예측 데이터 사용 범위 화살표 처리 - 단계성토
+        axes[1].arrow(time[step_start_index[0]], arrow1_y_loc,
+                      final_step_predict_end_date - time[step_start_index[0]], 0,
+                      head_width=arrow_head_width, head_length=arrow_head_length,
+                      color='black', length_includes_head='True')
+        axes[1].arrow(final_step_predict_end_date, arrow1_y_loc,
+                      time[step_start_index[0]] - final_step_predict_end_date, 0,
+                      head_width=arrow_head_width, head_length=arrow_head_length,
+                      color='black', length_includes_head='True')
+
+        # 예측 데이터 사용 범위 화살표 처리 - 기존 및 비선형 쌍곡선
+        axes[1].arrow(final_step_start_date, arrow2_y_loc,
+                      final_step_predict_end_date - final_step_start_date, 0,
+                      head_width=arrow_head_width, head_length=arrow_head_length,
+                      color='black', length_includes_head='True')
+        axes[1].arrow(final_step_predict_end_date, arrow2_y_loc,
+                      final_step_start_date - final_step_predict_end_date, 0,
+                      head_width=arrow_head_width, head_length=arrow_head_length,
+                      color='black', length_includes_head='True')
+
+        # Annotation 표시용 공간 설정
+        space = max(time) * 0.01
+
+        # 예측 데이터 사용 범위 범례 표시 - 단계성토
+        plt.annotate('Data Range Used (Nonlinear + Step Loading)', xy=(final_step_predict_end_date, arrow1_y_loc),
+                     xytext=(final_step_predict_end_date + space, arrow1_y_loc),
+                     horizontalalignment='left', verticalalignment='center')
+
+        # 예측 데이터 사용 범위 범례 표시 - 기존 및 비선형 쌍곡선
+        plt.annotate('Data Range Used (Hyperbolic and Asaoka)', xy=(final_step_predict_end_date, arrow1_y_loc),
+                     xytext=(final_step_predict_end_date + space, arrow2_y_loc),
+                     horizontalalignment='left', verticalalignment='center')
+
+        # RMSE 산정 범위 표시 화살표 세로 위치 설정
+        arrow3_y_loc = 0.55 * min(-settle)
+
+        # RMSE 산정 범위 화살표 표시
+        axes[1].arrow(final_step_predict_end_date, arrow3_y_loc,
+                      final_step_end_date - final_step_predict_end_date, 0,
+                      head_width=arrow_head_width, head_length=arrow_head_length,
+                      color='black', length_includes_head='True')
+        axes[1].arrow(final_step_end_date, arrow3_y_loc,
+                      final_step_predict_end_date - final_step_end_date, 0,
+                      head_width=arrow_head_width, head_length=arrow_head_length,
+                      color='black', length_includes_head='True')
+
+        # RMSE 산정 범위 세로선 설정
+        axes[1].axvline(x=final_step_end_date, color='silver', linestyle=':')
+
+        # RMSE 산정 범위 범례 표시
+        plt.annotate('RMSE Estimation Section', xy=(final_step_end_date, arrow3_y_loc),
+                     xytext=(final_step_end_date + space, arrow3_y_loc),
+                     horizontalalignment='left', verticalalignment='center')
+
+        # RMSE 출력
+        mybox = {'facecolor': 'white', 'edgecolor': 'black', 'boxstyle': 'round', 'alpha': 0.2}
+        plt.text(max(time) * 1.04, 0.20 * min(-settle),
+                 r"$\bf{Root\ Mean\ Squared\ Error}$"
+                 + "\n" + "Original Hyperbolic: %0.3f" % rmse_hyper_original
+                 + "\n" + "Nonlinear Hyperbolic: %0.3f" % rmse_hyper_nonlinear
+                 + "\n" + "Nonlinear Hyperbolic (Weighted): %0.3f" % rmse_hyper_weight_nonlinear
+                 + "\n" + "Asaoka: %0.3f" % rmse_asaoka
+                 + "\n" + "Nonlinear + Step Loading: %0.3f" % rmse_step,
+                 color='r', horizontalalignment='right',
+                 verticalalignment='top', fontsize='10', bbox=mybox)
+
+        # (최종 계측 침하량 - 예측값) 출력
+        plt.text(max(time) * 1.04, 0.55 * min(-settle),
+                 r"$\bf{Error\ in\ Final\ Settlement}$"
+                 + "\n" + "Original Hyperbolic: %0.3f" % final_error_hyper_original
+                 + "\n" + "Nonlinear Hyperbolic: %0.3f" % final_error_hyper_nonlinear
+                 + "\n" + "Nonlinear Hyperbolic (Weighted): %0.3f" % final_error_hyper_weight_nonlinear
+                 + "\n" + "Asaoka: %0.3f" % final_error_asaoka
+                 + "\n" + "Nonlinear + Step Loading: %0.3f" % final_error_step,
+                 color='r', horizontalalignment='right',
+                 verticalalignment='top', fontsize='10', bbox=mybox)
+
+        # 파일 이름만 추출
+        filename = os.path.basename(point_name)
+
+        # 그래프 제목 표시
+        plt.title(filename + ": up to %i%% data used in the final step" % final_step_predict_percent)
+
+        # 그래프 저장 (SVG 및 PNG)
+        # plt.savefig(output_dir + '/' + filename +' %i percent (SVG).svg' %final_step_predict_percent, bbox_inches='tight')
+        #plt.savefig(output_dir + '/' + filename + ' %i percent (PNG).png' % final_step_predict_percent, bbox_inches='tight')
+
+        # 그래프 출력
+        if plot_show:
+            plt.show()
+
+        # 그래프 닫기 (메모리 소모 방지)
+        plt.close()
+
+        # 예측 완료 표시
+        print("Settlement prediction is done for " + filename +
+              " with " + str(final_step_predict_percent) + "% data usage")
+
+        # 단계 성토 고려 여부 표시
+        is_multi_step = True
+        if len(step_start_index) == 1:
+            is_multi_step = False
+
+        # 반환
+
+        axes[1].plot(time_hyper, -sp_hyper_original,
+                     linestyle='--', color='red', label='Original Hyperbolic')
+        axes[1].plot(time_hyper, -sp_hyper_nonlinear,
+                     linestyle='--', color='green', label='Nonlinear Hyperbolic')
+        axes[1].plot(time_hyper, -sp_hyper_weight_nonlinear,
+                     linestyle='--', color='blue', label='Nonlinear Hyperbolic (Weighted)')
+        axes[1].plot(time_asaoka, -sp_asaoka,
+                     linestyle='--', color='orange', label='Asaoka')
+        axes[1].plot(time[step_start_index[0]:], -sp_step[step_start_index[0]:],
+                     linestyle='--', color='navy', label='Nonlinear + Step Loading')
 
     return [time_hyper, sp_hyper_original,
             time_hyper, sp_hyper_nonlinear,
@@ -756,7 +755,7 @@ def run_settle_prediction(point_name,
             rmse_hyper_original, rmse_hyper_nonlinear, rmse_hyper_weight_nonlinear,
             rmse_asaoka, rmse_step,
             final_error_hyper_original, final_error_hyper_nonlinear, final_error_hyper_weight_nonlinear,
-            final_error_asaoka, final_error_step, is_multi_step]
+            final_error_asaoka, final_error_step]
 
 '''
 run_settle_prediction(input_file='data/2-5_No.39.csv',
