@@ -79,19 +79,12 @@ def run_settle_prediction_from_file(input_file, output_dir,
     settle = data['Settlement'].to_numpy()
     surcharge = data['Surcharge'].to_numpy()
 
-    run_settle_prediction(point_name=input_file,
-                          np_time=time,
-                          np_surcharge=surcharge,
-                          np_settlement=settle,
+    run_settle_prediction(point_name=input_file, np_time=time, np_surcharge=surcharge, np_settlement=settle,
                           final_step_predict_percent=final_step_predict_percent,
-                          additional_predict_percent=additional_predict_percent,
-                          plot_show=plot_show,
-                          print_values=print_values,
-                          run_original_hyperbolic=run_original_hyperbolic,
-                          run_nonlinear_hyperbolic=run_nonlinear_hyperbolic,
-                          run_weighted_nonlinear_hyperbolic='False',
-                          run_asaoka=run_asaoka,
-                          run_step_prediction=run_step_prediction,
+                          additional_predict_percent=additional_predict_percent, plot_show=plot_show,
+                          print_values=print_values, run_original_hyperbolic=run_original_hyperbolic,
+                          run_nonlinear_hyperbolic=run_nonlinear_hyperbolic, run_weighted_nonlinear_hyperbolic='False',
+                          run_asaoka=run_asaoka, run_step_prediction=run_step_prediction,
                           asaoka_interval=asaoka_interval)
 
 def run_settle_prediction(point_name,
@@ -101,10 +94,10 @@ def run_settle_prediction(point_name,
                           print_values,
                           run_original_hyperbolic='True',
                           run_nonlinear_hyperbolic='True',
-                          run_weighted_nonlinear_hyperbolic='False',
+                          run_weighted_nonlinear_hyperbolic='True',
                           run_asaoka = 'True',
                           run_step_prediction='True',
-                          asaoka_interval = 3):
+                          asaoka_interval = 5):
 
     # ====================
     # 파일 읽기, 데이터 설정
@@ -757,6 +750,11 @@ def run_settle_prediction(point_name,
             final_error_hyper_original, final_error_hyper_nonlinear, final_error_hyper_weight_nonlinear,
             final_error_asaoka, final_error_step]
 
+#def run_postprocessing_error(point_name, np_time, np_surcharge, np_settlement):
+#    a = a + 1
+
+#def run_postprocessing_graph(point_name, np_time, np_surcharge, np_)
+#
 '''
 run_settle_prediction(input_file='data/2-5_No.39.csv',
                       output_dir='output',

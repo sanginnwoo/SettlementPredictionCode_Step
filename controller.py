@@ -25,7 +25,8 @@ nod: number of date
 def settlement_prediction(point_name):
 
     # connect the database
-    connection = pg2.connect("host=localhost dbname=postgres user=postgres password=lab36981 port=5432")
+    #connection = pg2.connect("host=localhost dbname=postgres user=postgres password=lab36981 port=5432") # local
+    connection = pg2.connect("host=192.168.0.13 dbname=sgis user=sgis password=sgis port=5432") # ICTWay internal
 
     # set cursor
     cursor = connection.cursor()
@@ -43,9 +44,9 @@ def settlement_prediction(point_name):
 
     # fill lists
     for row in monitoring_record:
-        settlement.append(float(row[6]))
-        surcharge.append(float(row[8]))
-        time.append(float(row[12]))
+        settlement.append(float(row[5]))
+        surcharge.append(float(row[7]))
+        time.append(float(row[1]))
 
     # convert lists to np arrays
     settlement = np.array(settlement)
@@ -53,25 +54,28 @@ def settlement_prediction(point_name):
     time = np.array(time)
 
     # run the settlement prediction and get results
-    results = settle_prediction_steps_main.run_settle_prediction(point_name=point_name,
-                                                                 np_time=time,
-                                                                 np_surcharge=surcharge,
-                                                                 np_settlement=settlement,
+    results = settle_prediction_steps_main.run_settle_prediction(point_name=point_name, np_time=time,
+                                                                 np_surcharge=surcharge, np_settlement=settlement,
                                                                  final_step_predict_percent=90,
-                                                                 additional_predict_percent=300,
-                                                                 plot_show=False,
-                                                                 print_values=False,
-                                                                 run_original_hyperbolic=True,
+                                                                 additional_predict_percent=300, plot_show=False,
+                                                                 print_values=False, run_original_hyperbolic=True,
                                                                  run_nonlinear_hyperbolic=True,
                                                                  run_weighted_nonlinear_hyperbolic=True,
-                                                                 run_asaoka=True,
-                                                                 run_step_prediction=True,
+                                                                 run_asaoka=True, run_step_prediction=True,
                                                                  asaoka_interval=3)
 
     # if there are prediction data for the given data point, delete it first
     postgres_delete_query = """DELETE FROM apptb_pred02 WHERE cons_code='""" + point_name + """'"""
     cursor.execute(postgres_delete_query)
     connection.commit()
+
+    # prediction method code
+    # 0: original hyperbolic method
+    # 1: nonlinear hyperbolic method
+    # 2: weighted nonlinear hyperbolic method
+    # 3: Asaoka method
+    # 4: Step loading
+    # 5: temp
 
     # insert predicted settlement into database
     for i in range(5):
@@ -85,7 +89,8 @@ def settlement_prediction(point_name):
 
             # construct insert query
             postgres_insert_query \
-                = """INSERT INTO apptb_pred02 (cons_code, prediction_progress_days, predicted_settlement, prediction_method) """\
+                = """INSERT INTO apptb_pred02 """ \
+                  + """(cons_code, prediction_progress_days, predicted_settlement, prediction_method) """ \
                   + """VALUES (%s, %s, %s, %s)"""
 
             # set data to insert
@@ -128,8 +133,18 @@ def read_database_and_plot(point_name):
     surcharge_monitored = np.array(surcharge_monitored)
     time_monitored = np.array(time_monitored)
 
+    # prediction method code
+    # 0: original hyperbolic method
+    # 1: nonlinear hyperbolic method
+    # 2: weighted nonlinear hyperbolic method
+    # 3: Asaoka method
+    # 4: Step loading
+    # 5: temp
+
+    # temporarily set the prediction method as 0
     prediction_method = 0
-    # select monitoring data for the monitoring point
+
+    # select predicted data for the monitoring point
     postgres_select_query = """SELECT prediction_progress_days, predicted_settlement """ \
                             + """FROM apptb_pred02 WHERE cons_code= '""" + point_name \
                             + """' and prediction_method = """ + str(prediction_method) \
@@ -169,12 +184,10 @@ def read_database_and_plot(point_name):
                  linestyle='--', color='red', label='Original Hyperbolic')
 
 
-
-# python3 controller.py 1_SP-5
+# script to call: python3 controller.py [business_code] [cons_code]
+# for example:
 if __name__ == '__main__':
     args = sys.argv[1:]
     point_name = args[0]
-    #settlement_prediction(point_name=point_name)
-    read_database_and_plot(point_name=point_name)
-
-
+    settlement_prediction(point_name=point_name)
+#    read_database_and_plot(point_name=point_name) #DB 입력 결과 확인 시에 활성화 / 평소에는 비활성화
