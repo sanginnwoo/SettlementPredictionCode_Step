@@ -38,8 +38,7 @@ for input_file in input_files:
     for i in range(20, 100, 10):
 
         # 침하 예측을 수행하고 반환값 저장
-        return_values = settle_prediction_steps_main. \
-                            run_settle_prediction(,
+        return_values = settle_prediction_steps_main.run_settle_prediction_from_file(input_file=input_file)
 
         # 데이터프레임에 일단 및 다단 성토를 포함한 예측의 에러를 저장
         df_overall.loc[len(df_overall.index)] = [input_file, i, return_values[0], return_values[1],
