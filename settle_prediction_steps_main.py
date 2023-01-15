@@ -63,7 +63,7 @@ def run_settle_prediction_from_file(input_file, output_dir,
                                     print_values,
                                     run_original_hyperbolic='True',
                                     run_nonlinear_hyperbolic='True',
-                                    run_weighted_nonlinear_hyperbolic='False',
+                                    run_weighted_nonlinear_hyperbolic='True',
                                     run_asaoka='True',
                                     run_step_prediction='True',
                                     asaoka_interval=3):
@@ -82,9 +82,12 @@ def run_settle_prediction_from_file(input_file, output_dir,
     run_settle_prediction(point_name=input_file, np_time=time, np_surcharge=surcharge, np_settlement=settle,
                           final_step_predict_percent=final_step_predict_percent,
                           additional_predict_percent=additional_predict_percent, plot_show=plot_show,
-                          print_values=print_values, run_original_hyperbolic=run_original_hyperbolic,
-                          run_nonlinear_hyperbolic=run_nonlinear_hyperbolic, run_weighted_nonlinear_hyperbolic='False',
-                          run_asaoka=run_asaoka, run_step_prediction=run_step_prediction,
+                          print_values=print_values,
+                          run_original_hyperbolic=run_original_hyperbolic,
+                          run_nonlinear_hyperbolic=run_nonlinear_hyperbolic,
+                          run_weighted_nonlinear_hyperbolic=run_weighted_nonlinear_hyperbolic,
+                          run_asaoka=run_asaoka,
+                          run_step_prediction=run_step_prediction,
                           asaoka_interval=asaoka_interval)
 
 def run_settle_prediction(point_name,
@@ -369,7 +372,7 @@ def run_settle_prediction(point_name,
     '''
 
     # =========================================================
-    # Settlement prediction (nonliner and original hyperbolic)
+    # Settlement prediction (nonliner, weighted nonlinear and original hyperbolic)
     # =========================================================
 
     # 성토 마지막 데이터 추출
@@ -563,6 +566,8 @@ def run_settle_prediction(point_name,
         print("Error in Final Settlement (Asaoka): %0.3f" % final_error_asaoka)
 
 
+
+
     # ==========================================
     # Post-Processing #2 : 그래프 작성
     # ==========================================
@@ -744,17 +749,19 @@ def run_settle_prediction(point_name,
             time_hyper, sp_hyper_nonlinear,
             time_hyper, sp_hyper_weight_nonlinear,
             time_asaoka, sp_asaoka,
-            time[step_start_index[0]:], -sp_step[step_start_index[0]:],
-            rmse_hyper_original, rmse_hyper_nonlinear, rmse_hyper_weight_nonlinear,
-            rmse_asaoka, rmse_step,
-            final_error_hyper_original, final_error_hyper_nonlinear, final_error_hyper_weight_nonlinear,
-            final_error_asaoka, final_error_step]
+            time[step_start_index[0]:], sp_step[step_start_index[0]:],
+            rmse_hyper_original,
+            rmse_hyper_nonlinear,
+            rmse_hyper_weight_nonlinear,
+            rmse_asaoka,
+            rmse_step,
+            final_error_hyper_original,
+            final_error_hyper_nonlinear,
+            final_error_hyper_weight_nonlinear,
+            final_error_asaoka,
+            final_error_step]
 
-#def run_postprocessing_error(point_name, np_time, np_surcharge, np_settlement):
-#    a = a + 1
 
-#def run_postprocessing_graph(point_name, np_time, np_surcharge, np_)
-#
 '''
 run_settle_prediction(input_file='data/2-5_No.39.csv',
                       output_dir='output',

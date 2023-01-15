@@ -22,18 +22,18 @@ fill_height: height of surcharge fill
 nod: number of date
 '''
 
-def settlement_prediction(point_name):
+def settlement_prediction(business_code, cons_code):
 
     # connect the database
-    #connection = pg2.connect("host=localhost dbname=postgres user=postgres password=lab36981 port=5432") # local
-    connection = pg2.connect("host=192.168.0.13 dbname=sgis user=sgis password=sgis port=5432") # ICTWay internal
+    connection = pg2.connect("host=localhost dbname=postgres user=postgres password=lab36981 port=5432") # local
+    #connection = pg2.connect("host=192.168.0.13 dbname=sgis user=sgis password=sgis port=5432") # ICTWay internal
 
     # set cursor
     cursor = connection.cursor()
 
     # select monitoring data for the monitoring point
-    postgres_select_query = """SELECT * FROM apptb_surset02 WHERE cons_code='""" \
-                            + point_name + """' ORDER BY nod ASC"""
+    postgres_select_query = """SELECT * FROM apptb_surset02 WHERE business_code='""" + business_code \
+                            + """' and cons_code='""" + cons_code + """' ORDER BY nod ASC"""
     cursor.execute(postgres_select_query)
     monitoring_record = cursor.fetchall()
 
@@ -44,9 +44,9 @@ def settlement_prediction(point_name):
 
     # fill lists
     for row in monitoring_record:
-        settlement.append(float(row[5]))
-        surcharge.append(float(row[7]))
-        time.append(float(row[1]))
+        settlement.append(float(row[6]))
+        surcharge.append(float(row[8]))
+        time.append(float(row[2]))
 
     # convert lists to np arrays
     settlement = np.array(settlement)
@@ -54,7 +54,7 @@ def settlement_prediction(point_name):
     time = np.array(time)
 
     # run the settlement prediction and get results
-    results = settle_prediction_steps_main.run_settle_prediction(point_name=point_name, np_time=time,
+    results = settle_prediction_steps_main.run_settle_prediction(point_name=cons_code, np_time=time,
                                                                  np_surcharge=surcharge, np_settlement=settlement,
                                                                  final_step_predict_percent=90,
                                                                  additional_predict_percent=300, plot_show=False,
@@ -64,21 +64,31 @@ def settlement_prediction(point_name):
                                                                  run_asaoka=True, run_step_prediction=True,
                                                                  asaoka_interval=3)
 
-    # if there are prediction data for the given data point, delete it first
-    postgres_delete_query = """DELETE FROM apptb_pred02 WHERE cons_code='""" + point_name + """'"""
-    cursor.execute(postgres_delete_query)
-    connection.commit()
 
     # prediction method code
-    # 0: original hyperbolic method
-    # 1: nonlinear hyperbolic method
-    # 2: weighted nonlinear hyperbolic method
-    # 3: Asaoka method
-    # 4: Step loading
-    # 5: temp
+    # 1: original hyperbolic method
+    # 2: nonlinear hyperbolic method
+    # 3: weighted nonlinear hyperbolic method
+    # 4: Asaoka method
+    # 5: Step loading
 
-    # insert predicted settlement into database
+
+    '''
+    time_hyper, sp_hyper_original,
+    time_hyper, sp_hyper_nonlinear,
+    time_hyper, sp_hyper_weight_nonlinear,
+    time_asaoka, sp_asaoka,
+            time[step_start_index[0]:], -sp_step[step_start_index[0]:],
+    '''
+
     for i in range(5):
+
+        # if there are prediction data for the given data point, delete it first
+        postgres_delete_query = """DELETE FROM apptb_pred02_no""" + str(i + 1) \
+                                + """ WHERE business_code='""" + business_code \
+                                + """' and cons_code='""" + cons_code + """'"""
+        cursor.execute(postgres_delete_query)
+        connection.commit()
 
         # get time and settlement arrays
         time = results[2 * i]
@@ -89,31 +99,34 @@ def settlement_prediction(point_name):
 
             # construct insert query
             postgres_insert_query \
-                = """INSERT INTO apptb_pred02 """ \
-                  + """(cons_code, prediction_progress_days, predicted_settlement, prediction_method) """ \
-                  + """VALUES (%s, %s, %s, %s)"""
+                = """INSERT INTO apptb_pred02_no""" + str(i + 1) + """ """ \
+                  + """(business_code, cons_code, prediction_progress_days, predicted_settlement, prediction_method) """ \
+                  + """VALUES (%s, %s, %s, %s, %s)"""
 
             # set data to insert
-            record_to_insert = (point_name, time[j], predicted_settlement[j], i)
+            record_to_insert = (business_code, cons_code, time[j], predicted_settlement[j], i + 1)
 
             # execute the insert query
             cursor.execute(postgres_insert_query, record_to_insert)
 
-    # commit changes
-    connection.commit()
+            # commit changes
+            connection.commit()
+
+            a = 0
 
 
-def read_database_and_plot(point_name):
+def read_database_and_plot(business_code, cons_code):
 
     # connect the database
     connection = pg2.connect("host=localhost dbname=postgres user=postgres password=lab36981 port=5432")
+    # connection = pg2.connect("host=192.168.0.13 dbname=sgis user=sgis password=sgis port=5432") # ICTWay internal
 
     # set cursor
     cursor = connection.cursor()
 
     # select monitoring data for the monitoring point
-    postgres_select_query = """SELECT * FROM apptb_surset02 WHERE cons_code='""" \
-                            + point_name + """' ORDER BY nod ASC"""
+    postgres_select_query = """SELECT * FROM apptb_surset02 WHERE business_code='""" + business_code \
+                            + """' and cons_code='""" + cons_code + """' ORDER BY nod ASC"""
     cursor.execute(postgres_select_query)
     monitoring_record = cursor.fetchall()
 
@@ -124,9 +137,9 @@ def read_database_and_plot(point_name):
 
     # fill lists
     for row in monitoring_record:
+        time_monitored.append(float(row[2]))
         settlement_monitored.append(float(row[6]))
         surcharge_monitored.append(float(row[8]))
-        time_monitored.append(float(row[12]))
 
     # convert lists to np arrays
     settlement_monitored = np.array(settlement_monitored)
@@ -142,13 +155,13 @@ def read_database_and_plot(point_name):
     # 5: temp
 
     # temporarily set the prediction method as 0
-    prediction_method = 0
+    postgres_select_query = """SELECT prediction_progress_days, predicted_settlement """ \
+                            + """FROM apptb_pred02_no""" + str(1) \
+                            + """ WHERE business_code='""" + business_code \
+                            + """' and cons_code='""" + cons_code \
+                            + """' ORDER BY prediction_progress_days ASC"""
 
     # select predicted data for the monitoring point
-    postgres_select_query = """SELECT prediction_progress_days, predicted_settlement """ \
-                            + """FROM apptb_pred02 WHERE cons_code= '""" + point_name \
-                            + """' and prediction_method = """ + str(prediction_method) \
-                            + """ ORDER BY prediction_progress_days ASC"""
     cursor.execute(postgres_select_query)
     prediction_record = cursor.fetchall()
 
@@ -166,28 +179,37 @@ def read_database_and_plot(point_name):
     time_predicted = np.array(time_predicted)
 
     # 그래프 크기, 서브 그래프 개수 및 비율 설정
-    fig, axes = plt.subplots(2, 1, figsize=(12, 9), gridspec_kw={'height_ratios': [1, 3]})
+    fig, axes = plt.subplots(2, 1, figsize=(8, 6), gridspec_kw={'height_ratios': [1, 3]})
 
     # 성토고 그래프 표시
     axes[0].plot(time_monitored, surcharge_monitored, color='black', label='surcharge height')
 
     # 성토고 그래프 설정
-    axes[0].set_ylabel("Surcharge height (m)", fontsize=15)
+    axes[0].set_ylabel("Surcharge height (m)", fontsize=10)
     axes[0].set_xlim(left=0)
+    axes[0].set_xlim(right=np.max(time_predicted))
     axes[0].grid(color="gray", alpha=.5, linestyle='--')
     axes[0].tick_params(direction='in')
 
     # 계측 및 예측 침하량 표시
-    axes[1].scatter(time_monitored, -settlement_monitored, s=50,
+    axes[1].scatter(time_monitored, -settlement_monitored, s=30,
                     facecolors='white', edgecolors='black', label='measured data')
+
     axes[1].plot(time_predicted, -settlement_predicted,
                  linestyle='--', color='red', label='Original Hyperbolic')
+
+    axes[0].set_ylabel("Settlement (cm)", fontsize=10)
+    axes[1].set_xlim(left=0)
+    axes[1].set_xlim(right=np.max(time_predicted))
 
 
 # script to call: python3 controller.py [business_code] [cons_code]
 # for example:
 if __name__ == '__main__':
     args = sys.argv[1:]
-    point_name = args[0]
-    settlement_prediction(point_name=point_name)
-#    read_database_and_plot(point_name=point_name) #DB 입력 결과 확인 시에 활성화 / 평소에는 비활성화
+    business_code = args[0]
+    cons_code = args[1]
+    settlement_prediction(business_code=business_code, cons_code=cons_code)
+    print("The settlement prediction is over.")
+    read_database_and_plot(business_code=business_code, cons_code=cons_code)
+    print("Visualization is over.") #DB 입력 결과 확인 시에 활성화 / 평소에는 비활성화
