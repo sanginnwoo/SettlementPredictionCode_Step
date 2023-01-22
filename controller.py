@@ -66,11 +66,11 @@ def settlement_prediction(business_code, cons_code):
 
 
     # prediction method code
-    # 1: original hyperbolic method
-    # 2: nonlinear hyperbolic method
-    # 3: weighted nonlinear hyperbolic method
-    # 4: Asaoka method
-    # 5: Step loading
+    # 1: original hyperbolic method (쌍곡선법)
+    # 2: nonlinear hyperbolic method (비선형 쌍곡선법)
+    # 3: weighted nonlinear hyperbolic method (가중 비선형 쌍곡선법)
+    # 4: Asaoka method (아사오카법)
+    # 5: Step loading (단계성토 고려법)
 
 
     '''
@@ -109,10 +109,8 @@ def settlement_prediction(business_code, cons_code):
             # execute the insert query
             cursor.execute(postgres_insert_query, record_to_insert)
 
-            # commit changes
-            connection.commit()
-
-            a = 0
+        # commit changes
+        connection.commit()
 
 
 def read_database_and_plot(business_code, cons_code):
@@ -156,7 +154,7 @@ def read_database_and_plot(business_code, cons_code):
 
     # temporarily set the prediction method as 0
     postgres_select_query = """SELECT prediction_progress_days, predicted_settlement """ \
-                            + """FROM apptb_pred02_no""" + str(1) \
+                            + """FROM apptb_pred02_no""" + str(5) \
                             + """ WHERE business_code='""" + business_code \
                             + """' and cons_code='""" + cons_code \
                             + """' ORDER BY prediction_progress_days ASC"""
@@ -204,12 +202,15 @@ def read_database_and_plot(business_code, cons_code):
 
 
 # script to call: python3 controller.py [business_code] [cons_code]
-# for example:
+# for example: python3 controller.py 221222SA0003 CONS001
 if __name__ == '__main__':
+
     args = sys.argv[1:]
     business_code = args[0]
     cons_code = args[1]
+
     settlement_prediction(business_code=business_code, cons_code=cons_code)
     print("The settlement prediction is over.")
-    read_database_and_plot(business_code=business_code, cons_code=cons_code)
-    print("Visualization is over.") #DB 입력 결과 확인 시에 활성화 / 평소에는 비활성화
+
+    #read_database_and_plot(business_code=business_code, cons_code=cons_code)
+    #print("Visualization is over.")
