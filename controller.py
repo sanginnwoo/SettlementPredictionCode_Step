@@ -7,7 +7,7 @@ Starting Date: 2022-11-10
 import psycopg2 as pg2
 import sys
 import numpy as np
-import settle_prediction_steps_main
+import settle_prediction_main
 import matplotlib.pyplot as plt
 
 
