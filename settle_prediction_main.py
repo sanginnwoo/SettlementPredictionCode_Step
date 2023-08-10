@@ -70,16 +70,19 @@ def run_settle_prediction_from_file(input_file, output_dir,
     settle = data['Settlement'].to_numpy()
     surcharge = data['Surcharge'].to_numpy()
 
-    run_settle_prediction(point_name=input_file, np_time=time, np_surcharge=surcharge, np_settlement=settle,
-                          final_step_predict_percent=final_step_predict_percent,
-                          additional_predict_percent=additional_predict_percent, plot_show=plot_show,
-                          print_values=print_values,
-                          run_original_hyperbolic=run_original_hyperbolic,
-                          run_nonlinear_hyperbolic=run_nonlinear_hyperbolic,
-                          run_weighted_nonlinear_hyperbolic=run_weighted_nonlinear_hyperbolic)
+    return run_settle_prediction(point_name=input_file, output_dir=output_dir,
+                                 np_time=time,
+                                 np_surcharge=surcharge,
+                                 np_settlement=settle,
+                                 final_step_predict_percent=final_step_predict_percent,
+                                 additional_predict_percent=additional_predict_percent, plot_show=plot_show,
+                                 print_values=print_values,
+                                 run_original_hyperbolic=run_original_hyperbolic,
+                                 run_nonlinear_hyperbolic=run_nonlinear_hyperbolic,
+                                 run_weighted_nonlinear_hyperbolic=run_weighted_nonlinear_hyperbolic)
 
 
-def run_settle_prediction(point_name,
+def run_settle_prediction(point_name, output_dir,
                           np_time, np_surcharge, np_settlement,
                           final_step_predict_percent, additional_predict_percent,
                           plot_show,
@@ -342,10 +345,6 @@ def run_settle_prediction(point_name,
                      linestyle='--', color='green', label='Nonlinear Hyperbolic')
         axes[1].plot(time_hyper, -sp_hyper_weight_nonlinear,
                      linestyle='--', color='blue', label='Nonlinear Hyperbolic (Weighted)')
-        axes[1].plot(time_asaoka, -sp_asaoka,
-                     linestyle='--', color='orange', label='Asaoka')
-        axes[1].plot(time[step_start_index[0]:], -sp_step[step_start_index[0]:],
-                     linestyle='--', color='navy', label='Nonlinear + Step Loading')
 
         # 침하량 그래프 설정
         axes[1].set_xlabel("Time (day)", fontsize=15)
@@ -358,10 +357,6 @@ def run_settle_prediction(point_name,
 
         # 범례 표시
         axes[1].legend(loc=1, ncol=3, frameon=True, fontsize=10)
-
-        # 예측 데이터 사용 범위 음영 처리 - 단계성토
-        plt.axvspan(time[step_start_index[0]], final_step_predict_end_date,
-                    alpha=0.1, color='grey', hatch='//')
 
         # 예측 데이터 사용 범위 음영 처리 - 기존 및 비선형 쌍곡선
         plt.axvspan(final_step_start_date, final_step_predict_end_date,
@@ -439,12 +434,10 @@ def run_settle_prediction(point_name,
         # 그래프 제목 표시
         plt.title(filename + ": up to %i%% data used in the final step" % final_step_predict_percent)
 
-        # 그래프 저장 (SVG 및 PNG)
-        # plt.savefig(output_dir + '/' + filename +' %i percent (SVG).svg' %final_step_predict_percent, bbox_inches='tight')
-
         # 그래프 출력
         if plot_show:
-            plt.show()
+            plt.savefig(output_dir + '/' + filename +' %i percent (PNG).png' %final_step_predict_percent, bbox_inches='tight')
+            #plt.savefig(output_dir + '/' + filename +' %i percent (SVG).svg' %final_step_predict_percent, bbox_inches='tight')
 
         # 그래프 닫기 (메모리 소모 방지)
         plt.close()
