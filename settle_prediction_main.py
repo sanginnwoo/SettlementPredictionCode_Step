@@ -246,7 +246,7 @@ def run_settle_prediction(point_name, output_dir,
 
     # 가중 비선형 쌍곡선 가중치 산정
     weight = tm_hyper / np.sum(tm_hyper)
-
+    
     # 회귀분석 시행 (가중 비선형 쌍곡선)
     x0 = np.ones(2)
     res_lsq_hyper_weight_nonlinear = least_squares(fun_hyper_weight_nonlinear, x0,
@@ -435,8 +435,8 @@ def run_settle_prediction(point_name, output_dir,
         plt.title(filename + ": up to %i%% data used in the final step" % final_step_predict_percent)
 
         # 그래프 출력
-        if plot_show:
-            plt.savefig(output_dir + '/' + filename +' %i percent (PNG).png' %final_step_predict_percent, bbox_inches='tight')
+        #if plot_show:
+            #plt.savefig(output_dir + '/' + filename +' %i percent (PNG).png' %final_step_predict_percent, bbox_inches='tight')
             #plt.savefig(output_dir + '/' + filename +' %i percent (SVG).svg' %final_step_predict_percent, bbox_inches='tight')
 
         # 그래프 닫기 (메모리 소모 방지)
