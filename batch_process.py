@@ -1,6 +1,6 @@
 import pandas as pd
 import os
-import settle_prediction_main
+import settle_prediction_main2
 
 # 입력 파일이 있는 폴더명 지정: 사용자 직접 지정 필요
 input_dir = 'data'
@@ -22,10 +22,7 @@ df_overall = pd.DataFrame(columns=['File',
                                    'Data_usage',
                                    'RMSE_hyper_original',
                                    'RMSE_hyper_nonlinear',
-                                   'RMSE_hyper_weighted_nonlinear',
-                                   'Final_error_hyper_original',
-                                   'Final_error_hyper_nonlinear',
-                                   'Final_error_hyper_weighted_nonlinear'])
+                                   'RMSE_hyper_weighted_nonlinear'])
 
 # 입력 파일 저장 폴더에서 입력 파일의 이름을 파악하여 배열에 저장
 for (root, directories, files) in os.walk(input_dir):  # 입력 파일 안의 모든 파일에 대해서
@@ -36,21 +33,23 @@ for (root, directories, files) in os.walk(input_dir):  # 입력 파일 안의 �
 # 입력 파일명 저장소의 파일 하나에 대해서 예측을 수행하고, 결과값으로 잔차값을 받아서 저장
 for input_file in input_files:
 
-    # 최종 성토 이후 데이터 사용 영역에 대해서 [20 30 40 50 60 70 80 90]
-    for i in range(20, 100, 10):
+    # 최종 성토 이후 데이터 사용 영역에 대해서 [30 50 70]
+    for i in range(60, 180, 30):
         # 침하 예측을 수행하고 반환값 저장
-        return_values = settle_prediction_main.run_settle_prediction_from_file(input_file=input_file,
-                                                                               output_dir='output',
-                                                                               final_step_predict_percent=i,
-                                                                               additional_predict_percent=100,
-                                                                               plot_show=True,
-                                                                               print_values=True)
+        return_values = settle_prediction_main2.run_settle_prediction_from_file(input_file=input_file,
+                                                                                output_dir='output',
+                                                                                data_usage=i,
+                                                                                is_data_usage_percent=False,
+                                                                                rmse_usage=20,
+                                                                                is_rmse_usage_percent=False,
+                                                                                additional_predict_percent=100,
+                                                                                plot_show=True,
+                                                                                print_values=True)
 
         # 데이터프레임에 일단 및 다단 성토를 포함한 예측의 에러를 저장
         df_overall.loc[len(df_overall.index)] = [input_file,  # 파일명
                                                  i,  # 데이터 사용 영역
-                                                 return_values[6], return_values[7], return_values[8],  # RMSE
-                                                 return_values[9], return_values[10], return_values[11]]  # 최종 침하량 에러
+                                                 return_values[6], return_values[7], return_values[8]]  # RMSE
 
 # 에러 파일을 출력
 df_overall.to_csv('error_single.csv')

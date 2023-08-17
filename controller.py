@@ -56,7 +56,7 @@ def settlement_prediction(business_code, cons_code):
     # run the settlement prediction and get results
     results = settle_prediction_steps_main.run_settle_prediction(point_name=cons_code, np_time=time,
                                                                  np_surcharge=surcharge, np_settlement=settlement,
-                                                                 final_step_predict_percent=90,
+                                                                 data_usage=90,
                                                                  additional_predict_percent=300, plot_show=False,
                                                                  print_values=False, run_original_hyperbolic=True,
                                                                  run_nonlinear_hyperbolic=True,
