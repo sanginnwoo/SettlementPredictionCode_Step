@@ -389,4 +389,5 @@ def run_settle_prediction(point_name,
             time_hyper, sp_hyper_weight_nonlinear,
             rmse_hyper_original,
             rmse_hyper_nonlinear,
-            rmse_hyper_weight_nonlinear]
+            rmse_hyper_weight_nonlinear,
+            start_date, final_date, total_period]

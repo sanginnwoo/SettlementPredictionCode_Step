@@ -20,6 +20,9 @@ input_files = []
 # 일단 및 다단 성토를 포함한 예측의 에러를 저장할 데이터프레임 초기화
 df_overall = pd.DataFrame(columns=['File',
                                    'Data_usage',
+                                   'Start_data',
+                                   'Final_date',
+                                   'Total_period',
                                    'RMSE_hyper_original',
                                    'RMSE_hyper_nonlinear',
                                    'RMSE_hyper_weighted_nonlinear'])
@@ -49,7 +52,12 @@ for input_file in input_files:
         # 데이터프레임에 일단 및 다단 성토를 포함한 예측의 에러를 저장
         df_overall.loc[len(df_overall.index)] = [input_file,  # 파일명
                                                  i,  # 데이터 사용 영역
-                                                 return_values[6], return_values[7], return_values[8]]  # RMSE
+                                                 return_values[9],
+                                                 return_values[10],
+                                                 return_values[11],
+                                                 return_values[6],
+                                                 return_values[7],
+                                                 return_values[8]]  # RMSE
 
 # 에러 파일을 출력
 df_overall.to_csv('error_single.csv')
