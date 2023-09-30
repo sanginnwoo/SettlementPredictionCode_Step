@@ -56,7 +56,8 @@ def run_settle_prediction_from_file(input_file,
                                     output_dir,
                                     data_usage,
                                     is_data_usage_percent,
-                                    rmse_usage,
+                                    rmse_start,
+                                    rmse_range,
                                     is_rmse_usage_percent,
                                     additional_predict_percent,
                                     plot_show,
@@ -83,13 +84,22 @@ def run_settle_prediction_from_file(input_file,
     elif 'settlement' in data.columns:
         settle = data['settlement'].to_numpy()
 
+    # Error handling
+    if is_rmse_usage_percent:
+        if rmse_start + rmse_range >100:
+            return None
+    else:
+        if np.max(time) < rmse_start + rmse_range:
+            return None
+
     return run_settle_prediction(point_name=input_file,
                                  output_dir=output_dir,
                                  np_time=time,
                                  np_settlement=settle,
                                  data_usage=data_usage,
                                  is_data_usage_percent=is_data_usage_percent,
-                                 rmse_usage=rmse_usage,
+                                 rmse_start=rmse_start,
+                                 rmse_range=rmse_range,
                                  is_rmse_usage_percent=is_rmse_usage_percent,
                                  additional_predict_percent=additional_predict_percent,
                                  plot_show=plot_show,
@@ -102,7 +112,8 @@ def run_settle_prediction(point_name,
                           np_settlement,
                           data_usage,
                           is_data_usage_percent,
-                          rmse_usage,
+                          rmse_start,
+                          rmse_range,
                           is_rmse_usage_percent,
                           additional_predict_percent,
                           plot_show,
@@ -133,7 +144,7 @@ def run_settle_prediction(point_name,
         predict_end_date = start_date + total_period * data_usage / 100
 
     # 데이터 사용 끝 시점 인덱스 검색
-    monitor_end_index = time.size
+    monitor_end_date = time.size
     predict_end_index = 0
     for day in time:
         predict_end_index = predict_end_index + 1
@@ -222,28 +233,36 @@ def run_settle_prediction(point_name,
     # ==============================
 
     #need to find rmse_start_index
-
-    # 데이터 사용 끝 시점 인덱스 검색
-
-    rmse_date = rmse_usage;
+    rmse_start_date = rmse_start
+    rmse_end_date = rmse_start + rmse_range
     if is_rmse_usage_percent:
-        rmse_date = (rmse_usage / 100.0) * total_period
+        rmse_start_date = (rmse_start / 100.0) * total_period
+        rmse_end_date = (rmse_start + rmse_range) / 100 * total_period
 
+    # RMSE 산정 시점 인덱스 검색
     rmse_start_index = 0
     for day in time:
         rmse_start_index = rmse_start_index + 1
-        if day > monitor_end_index - rmse_date:
+        if day > rmse_start_date:
             break
 
-
+    # RMSE 산정 종점 인덱스 검색
+    rmse_end_index = 0
+    for day in time:
+        rmse_end_index = rmse_end_index + 1
+        if day > rmse_end_date:
+            break
 
     # RMSE 계산 데이터 구간 설정 (계측)
-    sm_rmse = settle[rmse_start_index:monitor_end_index]
+    sm_rmse = settle[rmse_start_index:rmse_end_index]
+
+    if len(sm_rmse) == 0:
+        return
 
     # RMSE 계산 데이터 구간 설정 (비선형, 가중 비선형, 기존 쌍곡선)
-    sp_hyper_nonlinear_rmse = sp_hyper_nonlinear[rmse_start_index:monitor_end_index]
-    sp_hyper_weight_nonlinear_rmse = sp_hyper_weight_nonlinear[rmse_start_index:monitor_end_index]
-    sp_hyper_original_rmse = sp_hyper_original[rmse_start_index:monitor_end_index]
+    sp_hyper_nonlinear_rmse = sp_hyper_nonlinear[rmse_start_index:rmse_end_index]
+    sp_hyper_weight_nonlinear_rmse = sp_hyper_weight_nonlinear[rmse_start_index:rmse_end_index]
+    sp_hyper_original_rmse = sp_hyper_original[rmse_start_index:rmse_end_index]
 
     # RMSE 산정  (단계, 비선형 쌍곡선, 기존 쌍곡선)
     rmse_hyper_nonlinear = fun_rmse(sm_rmse, sp_hyper_nonlinear_rmse)
@@ -322,18 +341,18 @@ def run_settle_prediction(point_name,
         arrow3_y_loc = 0.55 * min(-settle)
 
         # RMSE 산정 범위 화살표 표시
-        axes.arrow(final_date - rmse_date, arrow3_y_loc,
-                      rmse_date, 0,
+        axes.arrow(rmse_start_date, arrow3_y_loc,
+                      rmse_end_date - rmse_start_date, 0,
                       head_width=arrow_head_width, head_length=arrow_head_length,
                       color='black', length_includes_head='True')
-        axes.arrow(final_date, arrow3_y_loc,
-                      -rmse_date, 0,
+        axes.arrow(rmse_end_date, arrow3_y_loc,
+                      rmse_start_date - rmse_end_date, 0,
                       head_width=arrow_head_width, head_length=arrow_head_length,
                       color='black', length_includes_head='True')
 
         # RMSE 산정 범위 세로선 설정
-        axes.axvline(x=final_date - rmse_date, color='silver', linestyle=':')
-        axes.axvline(x=final_date, color='silver', linestyle=':')
+        axes.axvline(x=rmse_start_date, color='silver', linestyle=':')
+        axes.axvline(x=rmse_end_date, color='silver', linestyle=':')
 
         # RMSE 산정 범위 범례 표시
         plt.annotate('RMSE Estimation Section', xy=(final_date, arrow3_y_loc),
@@ -363,10 +382,12 @@ def run_settle_prediction(point_name,
         # 그래프 출력
         if plot_show:
             if is_data_usage_percent:
-                plt.savefig(output_dir + '/' + filename +' %i percent (PNG).png' % data_usage, bbox_inches='tight')
+                plt.savefig(output_dir + '/' + filename + ' rmse %i data %i percent  (PNG).png' % (rmse_start, data_usage)
+                            , bbox_inches='tight')
                 #plt.savefig(output_dir + '/' + filename +' %i percent (PNG).svg' % data_usage, bbox_inches='tight')
             else:
-                plt.savefig(output_dir + '/' + filename + ' %i days (PNG).png' % data_usage, bbox_inches='tight')
+                plt.savefig(output_dir + '/' + filename + ' rmse %i data %i days (PNG).png' % (rmse_start, data_usage)
+                            , bbox_inches='tight')
                 #plt.savefig(output_dir + '/' + filename + ' %i days (PNG).svg' % data_usage, bbox_inches='tight')
 
         # 그래프 닫기 (메모리 소모 방지)

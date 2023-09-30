@@ -19,10 +19,9 @@ input_files = []
 
 # 일단 및 다단 성토를 포함한 예측의 에러를 저장할 데이터프레임 초기화
 df_overall = pd.DataFrame(columns=['File',
-                                   'Data_usage',
-                                   'Start_data',
+                                   'Data_date',
+                                   'RMSE_date',
                                    'Final_date',
-                                   'Total_period',
                                    'RMSE_hyper_original',
                                    'RMSE_hyper_nonlinear',
                                    'RMSE_hyper_weighted_nonlinear'])
@@ -34,30 +33,38 @@ for (root, directories, files) in os.walk(input_dir):  # 입력 파일 안의 �
         input_files.append(file_path)  # 파일명을 배열에 저장
 
 # 입력 파일명 저장소의 파일 하나에 대해서 예측을 수행하고, 결과값으로 잔차값을 받아서 저장
+# 데이터 사용 구간 = 60 + 30 * i where i = 0, 1, 2, 3, ....
+# RMSE 산정 구간 = 150-170, 300-320, 450-470, 600-620
+
 for input_file in input_files:
 
-    # 최종 성토 이후 데이터 사용 영역에 대해서 [30 50 70]
-    for i in range(60, 180, 30):
-        # 침하 예측을 수행하고 반환값 저장
-        return_values = settle_prediction_main2.run_settle_prediction_from_file(input_file=input_file,
-                                                                                output_dir='output',
-                                                                                data_usage=i,
-                                                                                is_data_usage_percent=False,
-                                                                                rmse_usage=20,
-                                                                                is_rmse_usage_percent=False,
-                                                                                additional_predict_percent=100,
-                                                                                plot_show=True,
-                                                                                print_values=True)
+    # RMSE 산정 구간 = 150-170, 300-320, 450-470, 600-620
+    for j in range(150, 750, 150):
 
-        # 데이터프레임에 일단 및 다단 성토를 포함한 예측의 에러를 저장
-        df_overall.loc[len(df_overall.index)] = [input_file,  # 파일명
-                                                 i,  # 데이터 사용 영역
-                                                 return_values[9],
-                                                 return_values[10],
-                                                 return_values[11],
-                                                 return_values[6],
-                                                 return_values[7],
-                                                 return_values[8]]  # RMSE
+        # 침하 예측 구간 설정 60, 90, 120, ... , j - 30 까지 수행
+        for i in range(60, j, 30):
+
+            # 침하 예측 수행
+            return_values = settle_prediction_main2.run_settle_prediction_from_file(input_file=input_file,
+                                                                                    output_dir='output',
+                                                                                    data_usage=i,
+                                                                                    is_data_usage_percent=False,
+                                                                                    rmse_start=j,
+                                                                                    rmse_range=20,
+                                                                                    is_rmse_usage_percent=False,
+                                                                                    additional_predict_percent=100,
+                                                                                    plot_show=True,
+                                                                                    print_values=True)
+
+            # 반환값이 존재할 경우 (침하예측이 가능할 경우)
+            if return_values is not None:
+                df_overall.loc[len(df_overall.index)] = [input_file,  # 파일명
+                                                         i,  # 데이터 사용 영역
+                                                         j,  # RMSE 산정 영역
+                                                         return_values[11], # 전체 데이터 영역
+                                                         return_values[6],  # RMSE 1
+                                                         return_values[7],  # RMSE 2
+                                                         return_values[8]]  # RMSE 3
 
 # 에러 파일을 출력
 df_overall.to_csv('error_single.csv')

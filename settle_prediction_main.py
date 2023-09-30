@@ -52,8 +52,10 @@ def fun_rmse(py1, py2):
     return np.sqrt(mse)
 
 
-def run_settle_prediction_from_file(input_file, output_dir,
-                                    final_step_predict_percent, additional_predict_percent,
+def run_settle_prediction_from_file(input_file,
+                                    output_dir,
+                                    final_step_predict_percent,
+                                    additional_predict_percent,
                                     plot_show,
                                     print_values,
                                     run_original_hyperbolic='True',
