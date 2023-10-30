@@ -355,8 +355,8 @@ def run_settle_prediction(point_name,
         axes.axvline(x=rmse_end_date, color='silver', linestyle=':')
 
         # RMSE 산정 범위 범례 표시
-        plt.annotate('RMSE Estimation Section', xy=(final_date, arrow3_y_loc),
-                     xytext=(final_date + space, arrow3_y_loc),
+        plt.annotate('RMSE Estimation Section', xy=(rmse_end_date, arrow3_y_loc),
+                     xytext=(rmse_end_date + space, arrow3_y_loc),
                      horizontalalignment='left', verticalalignment='center')
 
         # RMSE 출력
