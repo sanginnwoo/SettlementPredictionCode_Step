@@ -1,8 +1,8 @@
 """
-Title: Error analysis of the settlement prediction curves
+Title: Drawing a graph with a given csv file
 Developer:
 Sang Inn Woo, Ph.D. @ Incheon National University
-Starting Date: 2022-11-10
+Starting Date: 2023-11-06
 """
 
 import pandas as pd
@@ -11,121 +11,17 @@ import matplotlib.pyplot as plt
 import math
 import scipy.stats as stats
 
-'''
-데이터 구조: rmse_analysis.csv
-['No', 'Site', 'File', 'Data_date', 'RMSE_date', 'Final_date' 
- 'RMSE_hyper_original', 'RMSE_hyper_nonlinear', 'RMSE_hyper_weighted_nonlinear',
- 'Div_hyper_original', 'Div_hyper_nonlinear', 'Div_hyper_weighted_nonlinear'])
-'''
+# CSV 파일 읽기
+data = pd.read_csv('data.csv', encoding='euc-kr')
 
-# CSV 파일 읽기 (일단, 다단 성토 포함)
-df_single = pd.read_csv('rmse_analysis.csv')#, encoding='euc-kr')
+# x, y, 축 설정
+x = data['x'].to_numpy()
+y = data['y'].to_numpy()
 
-# 통계량 저장소 statistics 초기화
-statistic = []
-
-# 통계량 저장소 statistics 데이터 구조
-#               mean    /   median  /   std   / 90% percentile
-# RMSE (OH)
-# RMSE (NH)
-# RMSE (WNH)
-
-# 카운트 초기화
-count = 0
-
-#
-#num_bars = 10
-probability_min = 0
-probability_max = 1.0
-is_data_usage_percent = False
-
-rmse_dates = range(140, 500, 140)
-
-# RMSE 산정 구간 = 140-160, 280-300, 420-440, 560-600, 700-720
-for rmse_date in rmse_dates:
-
-    data_dates = range(60, rmse_date, 30)
-    statistic = []
-
-    # 침하 예측 구간 설정 60, 90, 120, ... , j - 30 까지 수행
-    for data_date in data_dates:
-
-        # 전체 Error 분석을 위한 Dataframe 설정
-        df_single_sel = df_single.loc[df_single['RMSE_date'] == rmse_date]
-        df_single_sel = df_single_sel.loc[df_single['Data_date'] == data_date]
-
-        # RMSE 및 FE를 불러서 메모리에 저장
-        RMSE_hyper_original = df_single_sel['RMSE_hyper_original'].to_numpy()
-        RMSE_hyper_nonlinear = df_single_sel['RMSE_hyper_nonlinear'].to_numpy()
-        RMSE_hyper_weighted_nonlinear = df_single_sel['RMSE_hyper_weighted_nonlinear'].to_numpy()
-
-        # 평균, 중앙값, 표준편차 산정 및 저장
-        statistic.append([np.mean(RMSE_hyper_original), np.median(RMSE_hyper_original),
-                          np.std(RMSE_hyper_original), np.percentile(RMSE_hyper_original, 90)])
-        statistic.append([np.mean(RMSE_hyper_nonlinear), np.median(RMSE_hyper_nonlinear),
-                          np.std(RMSE_hyper_nonlinear), np.percentile(RMSE_hyper_nonlinear, 90)])
-        statistic.append([np.mean(RMSE_hyper_weighted_nonlinear), np.median(RMSE_hyper_weighted_nonlinear),
-                          np.std(RMSE_hyper_weighted_nonlinear), np.percentile(RMSE_hyper_weighted_nonlinear, 90)])
-
-        # 히스토그램 작성
-        fig, ax = plt.subplots(1, 1, figsize=(6, 6))
-
-        ax.set_ylim(0, 0.30)
-        ax.set_xlim(0, 50)
-        ax.set_yticks(np.arange(0, 0.35, 0.05))
-        ax.set_xticks(np.arange(0, 55, 5))
-        ax.tick_params(direction='in', bottom=True, top=True, left=True, right=True)
-        ax.grid(axis='both', color='lightgray', ls='-', lw=0.5)
-        ax.set_xlabel("RMSE (cm)")
-        ax.set_ylabel("Relative Frequency / $\\Delta$")
-        ax.text(48, 0.20,
-                'PDF is fitted using the Gamma distribution \n' +
-                'RMSE estimation in ' + str(rmse_date) + ' - ' + str(rmse_date + 20) + ' days \n' +
-                'Prediction using settlement data in 0 - ' + str(data_date) + ' days \n' +
-                '$\\Delta$ = 5 cm',
-                ha='right', va='top', size=10)
-
-        ax.hist([RMSE_hyper_original, RMSE_hyper_nonlinear, RMSE_hyper_weighted_nonlinear],
-                label=['Original Hyperbolic', 'Nonlinear Hyperbolic', 'Weighed Nonlinear Hyperbolic'],
-                bins = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50],
-                density=True, stacked=False, edgecolor='black', alpha=0.75,
-                color =['dimgray', 'darkgray', 'black'])
-
-        # Gamma 분포 산정을 위한 개체 선언
-        gamma = stats.gamma
-        x = np.linspace(0, rmse_date, 1000)
-
-        # Gamma 분포 매개변수 산정
-        gamma_param_original = gamma.fit(RMSE_hyper_original, floc=0)
-        gamma_param_nonlinear = gamma.fit(RMSE_hyper_nonlinear, floc=0)
-        gamma_param_weighted_nonlinear = gamma.fit(RMSE_hyper_weighted_nonlinear, floc=0)
-
-        # Gamma 분포 PDF 구축
-        gamma_pdf_original = gamma.pdf(x, *gamma_param_original)
-        gamma_pdf_nonlinear = gamma.pdf(x, *gamma_param_nonlinear)
-        gamma_pdf_weighted_nonlinear = gamma.pdf(x, *gamma_param_weighted_nonlinear)
-
-        # Gamma 분포 PDF 도시
-        ax.plot(x, gamma_pdf_original, label='PDF (Original Hyperbolic)',
-                color='dimgray', linestyle='--', linewidth=1.0)
-        ax.plot(x, gamma_pdf_nonlinear, label='PDF (Nonlinear Hyperbolic)',
-                color='darkgray', linestyle='--', linewidth=1.0)
-        ax.plot(x, gamma_pdf_weighted_nonlinear, label='PDF (Weighted Nonlinear Hyperbolic)',
-                color='black', linestyle='--', linewidth=1.0)
-
-        # 범례 삽입
-        ax.legend(loc=1, fontsize=10)
-
-        # 그래프 저장 (SVG 및 PNG)
-        if is_data_usage_percent:
-            plt.savefig('error/error_single(%i percent).png' % data_date, bbox_inches='tight')
-        else:
-            plt.savefig('error/error_single(rmse %i data %i).png' % (rmse_date, data_date), bbox_inches='tight')
-
-        plt.close()
-
-        # 카운트 증가
-        count = count + 1
+x_min = np.min(x)
+x_max = np.max(x)
+y_min = np.min(y)
+y_max = np.max(y)
 
     rmse_min = 0
     rmse_max = max(max(statistic))
