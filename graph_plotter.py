@@ -23,12 +23,12 @@ x_max = np.max(x)
 y_min = np.min(y)
 y_max = np.max(y)
 
-    rmse_min = 0
-    rmse_max = max(max(statistic))
-    rmse_max = math.ceil(rmse_max / 10) * 10
+rmse_min = 0
+rmse_max = max(max(statistic))
+rmse_max = math.ceil(rmse_max / 10) * 10
 
-    data_usage_min = min(data_dates) - 30
-    data_usage_max = max(data_dates) + 30
+data_usage_min = min(data_dates) - 30
+data_usage_max = max(data_dates) + 30
 
     # 통계량 배열을 numpy 배열로 전환
     statistic = np.array(statistic)
