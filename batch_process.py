@@ -24,7 +24,10 @@ df_overall = pd.DataFrame(columns=['File',
                                    'Final_date',
                                    'RMSE_hyper_original',
                                    'RMSE_hyper_nonlinear',
-                                   'RMSE_hyper_weighted_nonlinear'])
+                                   'RMSE_hyper_weighted_nonlinear',
+                                   'Div_hyper_original',
+                                   'Div_hyper_nonlinear',
+                                   'Div_hyper_weighted_nonlinear'])
 
 # 입력 파일 저장 폴더에서 입력 파일의 이름을 파악하여 배열에 저장
 for (root, directories, files) in os.walk(input_dir):  # 입력 파일 안의 모든 파일에 대해서
@@ -64,7 +67,10 @@ for input_file in input_files:
                                                          return_values[11], # 전체 데이터 영역
                                                          return_values[6],  # RMSE 1
                                                          return_values[7],  # RMSE 2
-                                                         return_values[8]]  # RMSE 3
+                                                         return_values[8],  # RMSE 3
+                                                         return_values[12], # 기존 쌍곡선법 발산 여부
+                                                         return_values[13], # 비선형 쌍곡선법 발산 여부
+                                                         return_values[14]] # 가중 비선형 쌍곡선법 발산 여부
 
 # 에러 파일을 출력
 df_overall.to_csv('error_single.csv')
