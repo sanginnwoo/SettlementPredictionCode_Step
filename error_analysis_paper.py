@@ -19,7 +19,7 @@ import scipy.stats as stats
 '''
 
 # CSV 파일 읽기 (일단, 다단 성토 포함)
-df_single = pd.read_csv('rmse_analysis.csv')#, encoding='euc-kr')
+df_single = pd.read_csv('rmse_analysis.csv')  # , encoding='euc-kr')
 
 # 통계량 저장소 statistics 초기화
 statistic = []
@@ -30,11 +30,32 @@ statistic = []
 # RMSE (NH)
 # RMSE (WNH)
 
+df_stats = pd.DataFrame(columns=['Data_date',
+                                 'RMSE_date',
+                                 'mean_hyper_original',
+                                 'mean_hyper_nonlinear',
+                                 'mean_hyper_weighted_nonlinear',
+                                 'median_hyper_original',
+                                 'median_hyper_nonlinear',
+                                 'median_hyper_weighted_nonlinear',
+                                 'std_hyper_original',
+                                 'std_hyper_nonlinear',
+                                 'std_hyper_weighted_nonlinear',
+                                 'q90_hyper_original',
+                                 'q90_hyper_nonlinear',
+                                 'q90_hyper_weighted_nonlinear',
+                                 'gamma_shape_hyper_original',
+                                 'gamma_shape_hyper_nonlinear',
+                                 'gamma_shape_hyper_weighted_nonlinear',
+                                 'gamma_scale_hyper_original',
+                                 'gamma_scale_hyper_nonlinear',
+                                 'gamma_scale_hyper_weighted_nonlinear'])
+
 # 카운트 초기화
 count = 0
 
 #
-#num_bars = 10
+# num_bars = 10
 probability_min = 0
 probability_max = 1.0
 is_data_usage_percent = False
@@ -59,13 +80,50 @@ for rmse_date in rmse_dates:
         RMSE_hyper_nonlinear = df_single_sel['RMSE_hyper_nonlinear'].to_numpy()
         RMSE_hyper_weighted_nonlinear = df_single_sel['RMSE_hyper_weighted_nonlinear'].to_numpy()
 
-        # 평균, 중앙값, 표준편차 산정 및 저장
+        # Gamma 분포 산정을 위한 개체 선언
+        gamma = stats.gamma
+        x = np.linspace(0, rmse_date, 1000)
+
+        # Gamma 분포 매개변수 산정
+        gamma_param_original = gamma.fit(RMSE_hyper_original, floc=0)
+        gamma_param_nonlinear = gamma.fit(RMSE_hyper_nonlinear, floc=0)
+        gamma_param_weighted_nonlinear = gamma.fit(RMSE_hyper_weighted_nonlinear, floc=0)
+
+        # Gamma 분포 PDF 구축
+        gamma_pdf_original = gamma.pdf(x, *gamma_param_original)
+        gamma_pdf_nonlinear = gamma.pdf(x, *gamma_param_nonlinear)
+        gamma_pdf_weighted_nonlinear = gamma.pdf(x, *gamma_param_weighted_nonlinear)
+
+        # 평균, 중앙값, 표준편차, Q90 산정 및 저장 - 그래프 도시용
         statistic.append([np.mean(RMSE_hyper_original), np.median(RMSE_hyper_original),
-                          np.std(RMSE_hyper_original), np.percentile(RMSE_hyper_original, 90)])
+                          np.std(RMSE_hyper_original), np.percentile(RMSE_hyper_original, 90),
+                          gamma_param_original[0], gamma_param_original[2]])
         statistic.append([np.mean(RMSE_hyper_nonlinear), np.median(RMSE_hyper_nonlinear),
-                          np.std(RMSE_hyper_nonlinear), np.percentile(RMSE_hyper_nonlinear, 90)])
+                          np.std(RMSE_hyper_nonlinear), np.percentile(RMSE_hyper_nonlinear, 90),
+                          gamma_param_nonlinear[0], gamma_param_nonlinear[2]])
         statistic.append([np.mean(RMSE_hyper_weighted_nonlinear), np.median(RMSE_hyper_weighted_nonlinear),
-                          np.std(RMSE_hyper_weighted_nonlinear), np.percentile(RMSE_hyper_weighted_nonlinear, 90)])
+                          np.std(RMSE_hyper_weighted_nonlinear), np.percentile(RMSE_hyper_weighted_nonlinear, 90),
+                          gamma_param_weighted_nonlinear[0], gamma_param_weighted_nonlinear[2]])
+
+        df_stats.loc[len(df_stats.index)] = [rmse_date, data_date,
+                                             np.mean(RMSE_hyper_original),
+                                             np.mean(RMSE_hyper_nonlinear),
+                                             np.mean(RMSE_hyper_weighted_nonlinear),
+                                             np.median(RMSE_hyper_original),
+                                             np.median(RMSE_hyper_nonlinear),
+                                             np.median(RMSE_hyper_weighted_nonlinear),
+                                             np.std(RMSE_hyper_original),
+                                             np.std(RMSE_hyper_nonlinear),
+                                             np.std(RMSE_hyper_weighted_nonlinear),
+                                             np.percentile(RMSE_hyper_original, 90),
+                                             np.percentile(RMSE_hyper_nonlinear, 90),
+                                             np.percentile(RMSE_hyper_weighted_nonlinear, 90),
+                                             gamma_param_original[0],
+                                             gamma_param_nonlinear[0],
+                                             gamma_param_weighted_nonlinear[0],
+                                             gamma_param_original[2],
+                                             gamma_param_nonlinear[2],
+                                             gamma_param_weighted_nonlinear[2]]
 
         # 히스토그램 작성
         fig, ax = plt.subplots(1, 1, figsize=(6, 6))
@@ -87,23 +145,9 @@ for rmse_date in rmse_dates:
 
         ax.hist([RMSE_hyper_original, RMSE_hyper_nonlinear, RMSE_hyper_weighted_nonlinear],
                 label=['Original Hyperbolic', 'Nonlinear Hyperbolic', 'Weighed Nonlinear Hyperbolic'],
-                bins = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50],
+                bins=[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50],
                 density=True, stacked=False, edgecolor='black', alpha=0.75,
-                color =['dimgray', 'darkgray', 'black'])
-
-        # Gamma 분포 산정을 위한 개체 선언
-        gamma = stats.gamma
-        x = np.linspace(0, rmse_date, 1000)
-
-        # Gamma 분포 매개변수 산정
-        gamma_param_original = gamma.fit(RMSE_hyper_original, floc=0)
-        gamma_param_nonlinear = gamma.fit(RMSE_hyper_nonlinear, floc=0)
-        gamma_param_weighted_nonlinear = gamma.fit(RMSE_hyper_weighted_nonlinear, floc=0)
-
-        # Gamma 분포 PDF 구축
-        gamma_pdf_original = gamma.pdf(x, *gamma_param_original)
-        gamma_pdf_nonlinear = gamma.pdf(x, *gamma_param_nonlinear)
-        gamma_pdf_weighted_nonlinear = gamma.pdf(x, *gamma_param_weighted_nonlinear)
+                color=['dimgray', 'darkgray', 'black'])
 
         # Gamma 분포 PDF 도시
         ax.plot(x, gamma_pdf_original, label='PDF (Original Hyperbolic)',
@@ -248,3 +292,99 @@ for rmse_date in rmse_dates:
     ax.legend()
     plt.savefig("error/evolution_rmse(rmse date %i 90q).png" % rmse_date, bbox_inches='tight')
     plt.close()
+
+    # 데이터 사용량 대비 RMSE 90% 변위수 변화 도시
+    fig, ax = plt.subplots(1, 1, figsize=(6, 6))
+
+    ax.set_ylabel('Probability')
+    ax.set_xlabel("RMSE (cm)")
+    ax.set_ylim(0, 0.55)
+    ax.set_xlim(0, 50)
+    ax.set_yticks(np.arange(0, 0.55, 0.05))
+    ax.set_xticks(np.arange(0, 55, 5))
+    ax.grid(color="gray", alpha=.5, linestyle='--')
+    ax.tick_params(direction='in')
+
+    for i in range(len(data_dates)):
+
+        gamma_param_original = [statistic[i * 3, 4], 0, statistic[i * 3, 5]]
+        gamma_param_nonlinear = [statistic[1 + i * 3, 4], 0, statistic[1 + i * 3, 5]]
+        gamma_param_weighted_nonlinear = [statistic[2 + i * 3, 4], 0, statistic[2 + i * 3, 5]]
+
+        x = np.linspace(0, rmse_date, 1000)
+
+        gamma_pdf_original = gamma.pdf(x, *gamma_param_original)
+        gamma_pdf_nonlinear = gamma.pdf(x, *gamma_param_nonlinear)
+        gamma_pdf_weighted_nonlinear = gamma.pdf(x, *gamma_param_weighted_nonlinear)
+
+        # Gamma 분포 PDF 도시
+        ax.plot(x, gamma_pdf_original, color='dimgray', linestyle='--', linewidth=1.0)
+
+    ax.legend()
+    plt.savefig("error/gamma_dist_original(rmse date %i).png" % rmse_date, bbox_inches='tight')
+    plt.close()
+
+    # 데이터 사용량 대비 RMSE 90% 변위수 변화 도시
+    fig, ax = plt.subplots(1, 1, figsize=(6, 6))
+
+    ax.set_ylabel('Probability')
+    ax.set_xlabel("RMSE (cm)")
+    ax.set_ylim(0, 0.55)
+    ax.set_xlim(0, 50)
+    ax.set_yticks(np.arange(0, 0.55, 0.05))
+    ax.set_xticks(np.arange(0, 55, 5))
+    ax.grid(color="gray", alpha=.5, linestyle='--')
+    ax.tick_params(direction='in')
+
+    for i in range(len(data_dates)):
+        gamma_param_original = [statistic[i * 3, 4], 0, statistic[i * 3, 5]]
+        gamma_param_nonlinear = [statistic[1 + i * 3, 4], 0, statistic[1 + i * 3, 5]]
+        gamma_param_weighted_nonlinear = [statistic[2 + i * 3, 4], 0, statistic[2 + i * 3, 5]]
+
+        x = np.linspace(0, rmse_date, 1000)
+
+        gamma_pdf_original = gamma.pdf(x, *gamma_param_original)
+        gamma_pdf_nonlinear = gamma.pdf(x, *gamma_param_nonlinear)
+        gamma_pdf_weighted_nonlinear = gamma.pdf(x, *gamma_param_weighted_nonlinear)
+
+        # Gamma 분포 PDF 도시
+        ax.plot(x, gamma_pdf_nonlinear, color='darkgray', linestyle='--', linewidth=1.0)
+
+    ax.legend()
+    plt.savefig("error/gamma_dist_nonlinear(rmse date %i).png" % rmse_date, bbox_inches='tight')
+    plt.close()
+
+    # 데이터 사용량 대비 RMSE 90% 변위수 변화 도시
+    fig, ax = plt.subplots(1, 1, figsize=(6, 6))
+
+    ax.set_ylabel('Probability')
+    ax.set_xlabel("RMSE (cm)")
+    ax.set_ylim(0, 0.55)
+    ax.set_xlim(0, 50)
+    ax.set_yticks(np.arange(0, 0.55, 0.05))
+    ax.set_xticks(np.arange(0, 55, 5))
+    ax.grid(color="gray", alpha=.5, linestyle='--')
+    ax.tick_params(direction='in')
+
+    for i in range(len(data_dates)):
+        gamma_param_original = [statistic[i * 3, 4], 0, statistic[i * 3, 5]]
+        gamma_param_nonlinear = [statistic[1 + i * 3, 4], 0, statistic[1 + i * 3, 5]]
+        gamma_param_weighted_nonlinear = [statistic[2 + i * 3, 4], 0, statistic[2 + i * 3, 5]]
+
+        x = np.linspace(0, rmse_date, 1000)
+
+        gamma_pdf_original = gamma.pdf(x, *gamma_param_original)
+        gamma_pdf_nonlinear = gamma.pdf(x, *gamma_param_nonlinear)
+        gamma_pdf_weighted_nonlinear = gamma.pdf(x, *gamma_param_weighted_nonlinear)
+
+        # Gamma 분포 PDF 도시
+        ax.plot(x, gamma_pdf_weighted_nonlinear, color='black', linestyle='--', linewidth=1.0)
+
+    ax.legend()
+    plt.savefig("error/gamma_dist_weighted_nonlinear(rmse date %i).png" % rmse_date, bbox_inches='tight')
+    plt.close()
+
+
+
+# 에러 파일을 출력
+df_stats.to_csv('error/error_stats.csv')
