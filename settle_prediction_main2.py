@@ -73,6 +73,8 @@ def run_settle_prediction_from_file(input_file,
         time = data['Time'].to_numpy()
     elif 'time' in data.columns:
         time = data['time'].to_numpy()
+    elif 'Day' in data.columns:
+        time = data['Day'].to_numpy()
 
     # 침하량 배열 생성
     if 'Settle' in data.columns:

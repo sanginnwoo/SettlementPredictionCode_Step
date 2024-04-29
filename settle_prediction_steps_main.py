@@ -134,7 +134,7 @@ def run_settle_prediction(point_name,
     for index in range(len(surcharge)):
 
         # 만일 성토고의 변화가 있을 경우,
-        if surcharge[index] != current_surcharge:
+        if surcharge[index] > current_surcharge * 1.05 or surcharge[index] < current_surcharge * 0.95:
             step_end_index.append(index)
             step_start_index.append(index)
             current_surcharge = surcharge[index]

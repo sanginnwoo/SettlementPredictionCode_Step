@@ -7,7 +7,7 @@ Starting Date: 2022-11-10
 import psycopg2 as pg2
 import sys
 import numpy as np
-import settle_prediction_main
+import settle_prediction_steps_main
 import matplotlib.pyplot as plt
 
 
@@ -25,14 +25,14 @@ nod: number of date
 def settlement_prediction(business_code, cons_code):
 
     # connect the database
-    connection = pg2.connect("host=localhost dbname=postgres user=postgres password=lab36981 port=5432") # local
-    #connection = pg2.connect("host=192.168.0.13 dbname=sgis user=sgis password=sgis port=5432") # ICTWay internal
+    #connection = pg2.connect("host=localhost dbname=postgres user=postgres password=lab36981 port=5432") # local
+    connection = pg2.connect("host=192.168.10.172 dbname=sgis_new user=sgis password=sgis port=5432") # ICTWay internal
 
     # set cursor
     cursor = connection.cursor()
 
     # select monitoring data for the monitoring point
-    postgres_select_query = """SELECT * FROM apptb_surset02 WHERE business_code='""" + business_code \
+    postgres_select_query = """SELECT (amount_cum_sub*-1), fill_height, nod FROM apptb_surset02 WHERE business_code='""" + business_code \
                             + """' and cons_code='""" + cons_code + """' ORDER BY nod ASC"""
     cursor.execute(postgres_select_query)
     monitoring_record = cursor.fetchall()
@@ -44,9 +44,9 @@ def settlement_prediction(business_code, cons_code):
 
     # fill lists
     for row in monitoring_record:
-        settlement.append(float(row[6]))
-        surcharge.append(float(row[8]))
-        time.append(float(row[2]))
+        settlement.append(float(row[0]))
+        surcharge.append(float(row[1]))  # fill_height
+        time.append(float(row[2]))       # nod
 
     # convert lists to np arrays
     settlement = np.array(settlement)
@@ -54,16 +54,16 @@ def settlement_prediction(business_code, cons_code):
     time = np.array(time)
 
     # run the settlement prediction and get results
-    results = settle_prediction_steps_main.run_settle_prediction(point_name=cons_code, np_time=time,
-                                                                 np_surcharge=surcharge, np_settlement=settlement,
-                                                                 data_usage=90,
-                                                                 additional_predict_percent=300, plot_show=False,
-                                                                 print_values=False, run_original_hyperbolic=True,
-                                                                 run_nonlinear_hyperbolic=True,
-                                                                 run_weighted_nonlinear_hyperbolic=True,
-                                                                 run_asaoka=True, run_step_prediction=True,
-                                                                 asaoka_interval=3)
-
+    results = (settle_prediction_steps_main.
+               run_settle_prediction(point_name=cons_code, np_time=time,
+                                     np_surcharge=surcharge, np_settlement=settlement,
+                                     final_step_predict_percent=95,
+                                     additional_predict_percent=200, plot_show=False,
+                                     print_values=False, run_original_hyperbolic=True,
+                                     run_nonlinear_hyperbolic=True,
+                                     run_weighted_nonlinear_hyperbolic=True,
+                                     run_asaoka=True, run_step_prediction=True,
+                                     asaoka_interval=3))
 
     # prediction method code
     # 1: original hyperbolic method (쌍곡선법)
@@ -71,7 +71,6 @@ def settlement_prediction(business_code, cons_code):
     # 3: weighted nonlinear hyperbolic method (가중 비선형 쌍곡선법)
     # 4: Asaoka method (아사오카법)
     # 5: Step loading (단계성토 고려법)
-
 
     '''
     time_hyper, sp_hyper_original,
@@ -91,7 +90,7 @@ def settlement_prediction(business_code, cons_code):
         connection.commit()
 
         # get time and settlement arrays
-        time = results[2 * i]
+        time_db = results[2 * i]
         predicted_settlement = results[2 * i + 1]
 
         # for each prediction time
@@ -104,7 +103,7 @@ def settlement_prediction(business_code, cons_code):
                   + """VALUES (%s, %s, %s, %s, %s)"""
 
             # set data to insert
-            record_to_insert = (business_code, cons_code, time[j], predicted_settlement[j], i + 1)
+            record_to_insert = (business_code, cons_code, time_db[j], predicted_settlement[j], i + 1)
 
             # execute the insert query
             cursor.execute(postgres_insert_query, record_to_insert)
@@ -202,12 +201,14 @@ def read_database_and_plot(business_code, cons_code):
 
 
 # script to call: python3 controller.py [business_code] [cons_code]
-# for example: python3 controller.py 221222SA0003 CONS001
+# for example: python3 controller.py 231229SA0001 CONS013
 if __name__ == '__main__':
 
-    args = sys.argv[1:]
-    business_code = args[0]
-    cons_code = args[1]
+    print("The settlement prediction is over.")
+
+    #args = sys.argv[1:]
+    business_code = '231229SA0001'
+    cons_code = 'CONS013'
 
     settlement_prediction(business_code=business_code, cons_code=cons_code)
     print("The settlement prediction is over.")
